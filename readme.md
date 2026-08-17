@@ -112,11 +112,15 @@ Layihədə bütün vizual elementlər və CSS dərhal oxunaqlı və modulyar ola
 │   │   └── slices/
 │   │       ├── cartSlice.js   # Shopping Cart Slice (qiymət, vergi, kupon, persistence)
 │   │       ├── taskSlice.js   # Task Manager Slice (CRUD, filtrlər, Stale Closure testi)
-│   │       └── toastSlice.js  # Global Toast Notifications Slice
+│   │       ├── toastSlice.js  # Global Toast Notifications Slice
+│   │       └── profileSlice.js# Profil State Slice (displayName, bio, rol, website) [CP4]
 │   ├── services/
 │   │   └── apiClient.js       # Mock API Client & 401 Response Interceptor
 │   ├── utils/
-│   │   └── token.js           # JWT Kodlaşdırma, Dekodlaşdırma və Vaxt hesablama utilitləri
+│   │   ├── token.js           # JWT Kodlaşdırma, Dekodlaşdırma və Vaxt hesablama utilitləri
+│   │   └── validators.js      # Reusable Validation Funksiyaları (required, email, URL...) [CP4]
+│   ├── composables/
+│   │   └── useForm.js         # Manual Form State & Validation Composable [CP4]
 │   ├── components/
 │   │   ├── AppHeader.js       # Başlıq paneli, dinamik səbət və tapşırıq sayğacları
 │   │   ├── ToastContainer.js  # Qlobal toast bildiriş konteyneri
@@ -138,6 +142,108 @@ Layihədə bütün vizual elementlər və CSS dərhal oxunaqlı və modulyar ola
 ├── assestments.md             # Qiymətləndirmə meyarları
 └── quality__checks.md         # Keyfiyyət yoxlama meyarları
 ```
+
+---
+
+## ✅ Checkpoint 4: Validated Forms — Manual Validation (15 Bal)
+
+Bu mərhələdə (`guide.md:L6`) tətbiqin üç ayrı görünüşünə **tam validasiyalı forma sistemi** əlavə edilmişdir. Həll **React Hook Form kitabxanasından asılı olmadan**, xalis Vue 3 Composition API ilə manual olaraq qurulmuşdur.
+
+### 1. `useForm` Composable (`src/composables/useForm.js`)
+
+Bütün formaların bel sütunu olan, **React Hook Form-un Vue 3 ekvivalenti** custom composable:
+
+```js
+const {
+  fields,       // reaktiv form dəyərləri — :value + @input ilə bağlanır
+  errors,       // sahə üzrə xəta mesajları
+  touched,      // istifadəçi hansı sahəni tərk edib?
+  isDirty,      // computed — hər hansı sahə ilkin dəyərdən fərqlənirmi?
+  isValid,      // computed — bütün xətalar boşdurmu?
+  isSubmitting, // reactive { value: bool } — yükləmə vəziyyəti
+  setField,     // (name, val) → dəyəri yenil, əgər touched isə validate et
+  touchField,   // (name) → @blur-da çağır → sahəni validate et
+  validateAll,  // () → submit zamanı bütün sahələri yoxla → bool qaytarır
+  resetForm,    // () → formu ilkin vəziyyətə qaytar
+  getValues,    // () → sahələrin sadə obyekt kopiyası
+} = useForm(initialValues, rules)
+```
+
+**Davranış mexanizmi:**
+* **`@blur`** → yalnız istifadəçinin tərk etdiyi sahə validate edilir (touch-based)
+* **Submit** → `validateAll()` bütün sahələri eyni anda yoxlayır, hamısını "touched" işarələyir
+* **`isDirty`** → "Yadda saxlanmamış dəyişiklik" badge-i üçün istifadə edilir
+* Xətalı sahələrdə **shake animasiyası** (`@keyframes formShake`) tətbiq edilir
+
+---
+
+### 2. `validators.js` Utiliti (`src/utils/validators.js`)
+
+Bütün formalarda istifadə olunan reusable, xalis funksiya validator modulu:
+
+| Funksiya | Yoxlama Meyarı |
+| :--- | :--- |
+| `validateRequired(v, label)` | Boş / boşluqdan ibarət sahəni rədd edir |
+| `validateEmail(v)` | RFC-uyğun email formatı (`user@domain.tld`) |
+| `validateMinLength(v, n, label)` | Minimum `n` simvol |
+| `validateMaxLength(v, n, label)` | Maksimum `n` simvol |
+| `validateUrl(v)` | `http://` və ya `https://` ilə başlayan URL |
+| `validateFutureDate(v)` | ISO tarix — keçmiş tarix rədd edilir |
+| `validateNoHtml(v)` | HTML teqi olan məzmunu rədd edir |
+| `runValidators(v, chain)` | Validator zənciri icra edir, ilk xətanı qaytarır |
+
+Hər validator `{ valid: boolean, error: string }` qaytarır.
+
+---
+
+### 3. Forma #1 — Profil Düzəliş Forması (`/profile`)
+
+**Sahələr:**
+* `displayName` \* — required, min 2, max 40 simvol
+* `role` \* — required, dropdown (5 rol seçimi)
+* `website` — isteğe bağlı, `https://` URL format yoxlaması
+* `bio` — isteğe bağlı, max 200 simvol + canlı simvol sayğacı
+
+**Xüsusiyyətlər:** `isDirty` badge ("Yadda saxlanmamış dəyişiklik"), son yeniləmə zaman damğası, "Ləğv Et" düyməsi formu sıfırlayır.
+
+**Dispatch:** `globalStore.dispatch({ type: 'profile/update', payload })` → `profileSlice.updateProfile()` → `localStorage`-ə yazılır.
+
+---
+
+### 4. Forma #2 — Genişləndirilmiş Tapşırıq Yaratma Forması (`/tasks`)
+
+**Sahələr:**
+* `title` \* — required, min **5**, max 120 simvol + canlı simvol sayğacı
+* `description` — isteğe bağlı, max 300 simvol, tapşırıq listdə açılan panel ilə göstərilir
+* `priority` \* — required, select (High/Medium/Low)
+* `category` \* — required, select (Engineering/Architecture/Security/DevTools/Forms/API)
+* `dueDate` — isteğe bağlı, date input, keçmiş tarix rədd edilir
+
+**Tapşırıq listdə yeniliklər:** Hər tapşırıqda `description` varsa "▼ Təsvir" düyməsi görünür; klik ilə açılır/gizlənir. Son tarix (`dueDate`) tapşırıq başlığının altında göstərilir.
+
+**Dispatch:** `globalStore.dispatch({ type: 'tasks/addTask', payload })` → `taskSlice.addTask()`.
+
+---
+
+### 5. Forma #3 — Dəstək & Rəy Forması (`/dashboard`)
+
+**Sahələr:**
+* `subject` \* — required, min 5, max 100 simvol
+* `category` \* — required, select (Bug Bildirişi / Xüsusiyyət Tələbi / Sual / Ümumi Rəy)
+* `priority` \* — required, select (Aşağı / Normal / Yüksək / Kritik)
+* `email` — isteğe bağlı, email format yoxlaması (cavab üçün)
+* `message` \* — required, min **20**, max 500 simvol + canlı sayğac (< 80 qalırsa sarı rəngə keçir)
+
+**Submit sonrası:** Toast bildirişi bilet nömrəsi ilə göstərilir (`FLIN-XXXXX`), forma avtomatik sıfırlanır.
+
+---
+
+### 6. Yeni State Slice — `profileSlice` (`src/state/slices/profileSlice.js`)
+
+* `displayName`, `bio`, `role`, `website` sahələrini idarə edir
+* Auth sessiyanından bootstrap edir (ilk yükləmədə `flin_user_data` əsasında doldurulur)
+* `localStorage` (`flin_profile_data`) ilə tam sinxronizasiya
+* `globalStore`-a `profile` sahəsi kimi qoşulub — **Redux DevTools StateInspector**-da görünür
 
 ---
 

@@ -3,6 +3,7 @@ import { authStore } from './authStore.js';
 import { cartSlice } from './slices/cartSlice.js';
 import { taskSlice } from './slices/taskSlice.js';
 import { toastSlice } from './slices/toastSlice.js';
+import { profileSlice } from './slices/profileSlice.js';
 
 /**
  * Global Store Architecture implementing Redux Toolkit / Context + Reducer Dispatch Pattern
@@ -19,7 +20,8 @@ function logAction(action, prevState, nextState) {
     stateSnapshot: {
       auth: { isAuthenticated: authStore.isAuthenticated.value, user: authStore.user.value?.displayName },
       cart: { itemCount: cartSlice.itemCount.value, grandTotal: cartSlice.grandTotal.value },
-      tasks: { total: taskSlice.tasks.value.length, completed: taskSlice.stats.value.completed }
+      tasks: { total: taskSlice.tasks.value.length, completed: taskSlice.stats.value.completed },
+      profile: { displayName: profileSlice.profile.value.displayName, role: profileSlice.profile.value.role }
     }
   };
 
@@ -35,6 +37,7 @@ export const globalStore = {
   cart: cartSlice,
   tasks: taskSlice,
   toasts: toastSlice,
+  profile: profileSlice,
 
   // DevTools action history
   actionHistory: computed(() => actionHistory),
@@ -114,6 +117,14 @@ export const globalStore = {
         toastSlice.removeToast(payload);
         break;
 
+      // Profile Actions (Checkpoint 4)
+      case 'profile/update':
+        profileSlice.updateProfile(payload);
+        break;
+      case 'profile/reload':
+        profileSlice.reloadProfile();
+        break;
+
       // Auth Actions
       case 'auth/login':
         authStore.login(payload.email, payload.password, payload.role, payload.rememberMe);
@@ -158,6 +169,13 @@ export const globalStore = {
       },
       toasts: {
         count: toastSlice.toasts.value.length
+      },
+      profile: {
+        displayName: profileSlice.profile.value.displayName,
+        bio: profileSlice.profile.value.bio,
+        role: profileSlice.profile.value.role,
+        website: profileSlice.profile.value.website,
+        lastUpdated: profileSlice.lastUpdated.value
       }
     };
   },

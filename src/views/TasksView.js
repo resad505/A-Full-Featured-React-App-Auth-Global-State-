@@ -1,14 +1,77 @@
 import { ref, computed } from 'vue';
 import { globalStore } from '../state/index.js';
 import { taskSlice } from '../state/slices/taskSlice.js';
+import { useForm } from '../composables/useForm.js';
+import {
+  validateRequired,
+  validateMinLength,
+  validateMaxLength,
+  validateFutureDate,
+  validateNoHtml
+} from '../utils/validators.js';
 
 export const TasksView = {
   name: 'TasksView',
   setup() {
-    const newTaskTitle = ref('');
-    const newTaskPriority = ref('Medium');
-    const newTaskCategory = ref('Engineering');
+    // ── Checkpoint 4: Enhanced Task Create Form ─────────────────────
+    const {
+      fields: taskFields,
+      errors: taskErrors,
+      isSubmitting: taskSubmitting,
+      touchField: touchTaskField,
+      setField: setTaskField,
+      validateAll: validateTaskForm,
+      resetForm: resetTaskForm,
+      getValues: getTaskValues
+    } = useForm(
+      {
+        title: '',
+        description: '',
+        priority: 'Medium',
+        category: 'Engineering',
+        dueDate: ''
+      },
+      {
+        title: [
+          (v) => validateRequired(v, 'Tapşırıq başlığı'),
+          (v) => validateMinLength(v, 5, 'Tapşırıq başlığı'),
+          (v) => validateMaxLength(v, 120, 'Tapşırıq başlığı'),
+          (v) => validateNoHtml(v)
+        ],
+        description: [
+          (v) => validateMaxLength(v, 300, 'Təsvir'),
+          (v) => validateNoHtml(v)
+        ],
+        priority: [
+          (v) => validateRequired(v, 'Prioritet')
+        ],
+        category: [
+          (v) => validateRequired(v, 'Kateqoriya')
+        ],
+        dueDate: [
+          (v) => validateFutureDate(v)
+        ]
+      }
+    );
 
+    const descRemaining = computed(() => 300 - (taskFields.description?.length || 0));
+
+    const handleCreateTask = () => {
+      const valid = validateTaskForm();
+      if (!valid) return;
+
+      taskSubmitting.value = true;
+      setTimeout(() => {
+        globalStore.dispatch({
+          type: 'tasks/addTask',
+          payload: getTaskValues()
+        });
+        resetTaskForm();
+        taskSubmitting.value = false;
+      }, 200);
+    };
+
+    // ── Existing task controls ──────────────────────────────────────
     const tasks = computed(() => taskSlice.filteredTasks.value);
     const stats = computed(() => taskSlice.stats.value);
     const currentFilter = computed(() => taskSlice.filter.value);
@@ -21,19 +84,6 @@ export const TasksView = {
       set: (val) => globalStore.dispatch({ type: 'tasks/setPriority', payload: val })
     });
     const staleLog = computed(() => taskSlice.staleLog.value);
-
-    const handleCreateTask = () => {
-      if (!newTaskTitle.value.trim()) return;
-      globalStore.dispatch({
-        type: 'tasks/addTask',
-        payload: {
-          title: newTaskTitle.value.trim(),
-          priority: newTaskPriority.value,
-          category: newTaskCategory.value
-        }
-      });
-      newTaskTitle.value = '';
-    };
 
     const handleToggle = (id) => {
       globalStore.dispatch({ type: 'tasks/toggleTask', payload: id });
@@ -59,23 +109,36 @@ export const TasksView = {
       globalStore.dispatch({ type: 'tasks/testStaleClosure' });
     };
 
+    // Expanded task detail toggle (show description / dueDate)
+    const expandedTaskId = ref(null);
+    const toggleExpand = (id) => {
+      expandedTaskId.value = expandedTaskId.value === id ? null : id;
+    };
+
     return {
-      newTaskTitle,
-      newTaskPriority,
-      newTaskCategory,
+      // form
+      taskFields,
+      taskErrors,
+      taskSubmitting,
+      descRemaining,
+      touchTaskField,
+      setTaskField,
+      handleCreateTask,
+      // list
       tasks,
       stats,
       currentFilter,
       searchQuery,
       priorityFilter,
       staleLog,
-      handleCreateTask,
       handleToggle,
       handleDelete,
       setFilter,
       handleBulkComplete,
       handleClearCompleted,
-      runStaleTest
+      runStaleTest,
+      expandedTaskId,
+      toggleExpand
     };
   },
   template: `
@@ -127,52 +190,157 @@ export const TasksView = {
         </div>
       </div>
 
-      <!-- Create task input card -->
-      <div class="task-create-card">
-        <form class="task-create-form" @submit.prevent="handleCreateTask">
-          <input 
-            v-model="newTaskTitle" 
-            type="text" 
-            class="task-create-form__input" 
-            placeholder="Yeni tapşırıq əlavə edin (məs: JWT interceptor testlərini tamamla)..." 
-            required 
-          />
-          <select v-model="newTaskPriority" class="task-create-form__select">
-            <option value="High">🔴 High Priority</option>
-            <option value="Medium">🟡 Medium Priority</option>
-            <option value="Low">🟢 Low Priority</option>
-          </select>
-          <select v-model="newTaskCategory" class="task-create-form__select">
-            <option value="Engineering">Engineering</option>
-            <option value="Architecture">Architecture</option>
-            <option value="Security">Security</option>
-            <option value="DevTools">DevTools</option>
-          </select>
-          <button type="submit" class="btn btn--solid btn--md task-create-form__btn">
-            + Əlavə Et
-          </button>
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <!-- CHECKPOINT 4: Enhanced Task Create Form — Manual Validation   -->
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <div class="task-create-card task-create-card--enhanced">
+        <div class="task-create-card__header">
+          <span class="badge badge--warning">Checkpoint 4 · useForm Validation</span>
+          <h3 class="task-create-card__title">Yeni Tapşırıq Əlavə Et</h3>
+        </div>
+
+        <form class="task-create-form task-create-form--enhanced" @submit.prevent="handleCreateTask" novalidate>
+          <div class="task-create-form__grid">
+
+            <!-- Title -->
+            <div class="task-create-form__group task-create-form__group--full" :class="{ 'task-create-form__group--error': taskErrors.title }">
+              <label class="task-create-form__label" for="tc-title">
+                Tapşırıq Başlığı <span class="profile-edit-form__required">*</span>
+              </label>
+              <input
+                id="tc-title"
+                :value="taskFields.title"
+                @input="setTaskField('title', $event.target.value)"
+                @blur="touchTaskField('title')"
+                type="text"
+                class="task-create-form__input"
+                placeholder="Minimum 5 simvol (məs: JWT interceptor testlərini tamamla)..."
+                maxlength="120"
+              />
+              <div class="task-create-form__feedback">
+                <span v-if="taskErrors.title" class="task-create-form__error">{{ taskErrors.title }}</span>
+                <span v-else class="field-hint">5 — 120 simvol.</span>
+                <span class="task-create-form__char-count">{{ taskFields.title.length }}/120</span>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="task-create-form__group task-create-form__group--full" :class="{ 'task-create-form__group--error': taskErrors.description }">
+              <div class="task-create-form__label-row">
+                <label class="task-create-form__label" for="tc-desc">
+                  Təsvir <span class="field-hint field-hint--inline">(isteğe bağlı)</span>
+                </label>
+                <span class="profile-edit-form__counter" :class="{ 'profile-edit-form__counter--warn': descRemaining < 50 }">
+                  {{ descRemaining }}/300
+                </span>
+              </div>
+              <textarea
+                id="tc-desc"
+                :value="taskFields.description"
+                @input="setTaskField('description', $event.target.value)"
+                @blur="touchTaskField('description')"
+                class="task-create-form__textarea"
+                placeholder="Tapşırıq haqqında əlavə məlumat..."
+                rows="2"
+                maxlength="300"
+              ></textarea>
+              <span v-if="taskErrors.description" class="task-create-form__error">{{ taskErrors.description }}</span>
+            </div>
+
+            <!-- Priority -->
+            <div class="task-create-form__group" :class="{ 'task-create-form__group--error': taskErrors.priority }">
+              <label class="task-create-form__label" for="tc-priority">
+                Prioritet <span class="profile-edit-form__required">*</span>
+              </label>
+              <select
+                id="tc-priority"
+                :value="taskFields.priority"
+                @change="setTaskField('priority', $event.target.value)"
+                @blur="touchTaskField('priority')"
+                class="task-create-form__select"
+              >
+                <option value="High">🔴 High Priority</option>
+                <option value="Medium">🟡 Medium Priority</option>
+                <option value="Low">🟢 Low Priority</option>
+              </select>
+              <span v-if="taskErrors.priority" class="task-create-form__error">{{ taskErrors.priority }}</span>
+            </div>
+
+            <!-- Category -->
+            <div class="task-create-form__group" :class="{ 'task-create-form__group--error': taskErrors.category }">
+              <label class="task-create-form__label" for="tc-category">
+                Kateqoriya <span class="profile-edit-form__required">*</span>
+              </label>
+              <select
+                id="tc-category"
+                :value="taskFields.category"
+                @change="setTaskField('category', $event.target.value)"
+                @blur="touchTaskField('category')"
+                class="task-create-form__select"
+              >
+                <option value="Engineering">Engineering</option>
+                <option value="Architecture">Architecture</option>
+                <option value="Security">Security</option>
+                <option value="DevTools">DevTools</option>
+                <option value="Styling">Styling</option>
+                <option value="Forms">Forms</option>
+                <option value="API">API</option>
+              </select>
+              <span v-if="taskErrors.category" class="task-create-form__error">{{ taskErrors.category }}</span>
+            </div>
+
+            <!-- Due Date -->
+            <div class="task-create-form__group" :class="{ 'task-create-form__group--error': taskErrors.dueDate }">
+              <label class="task-create-form__label" for="tc-due">
+                Son Tarix <span class="field-hint field-hint--inline">(isteğe bağlı)</span>
+              </label>
+              <input
+                id="tc-due"
+                :value="taskFields.dueDate"
+                @input="setTaskField('dueDate', $event.target.value)"
+                @blur="touchTaskField('dueDate')"
+                type="date"
+                class="task-create-form__input"
+              />
+              <span v-if="taskErrors.dueDate" class="task-create-form__error">{{ taskErrors.dueDate }}</span>
+              <span v-else class="field-hint">Keçmiş tarix seçmək olmaz.</span>
+            </div>
+
+            <!-- Submit -->
+            <div class="task-create-form__group task-create-form__group--submit">
+              <button
+                type="submit"
+                class="btn btn--solid btn--md task-create-form__btn-submit"
+                :disabled="taskSubmitting.value"
+              >
+                <span v-if="taskSubmitting.value" class="spinner"></span>
+                <span>{{ taskSubmitting.value ? 'Əlavə edilir...' : '+ Tapşırıq Əlavə Et' }}</span>
+              </button>
+            </div>
+
+          </div>
         </form>
       </div>
 
       <!-- Filters and Search Bar -->
       <div class="task-filter-bar">
         <div class="task-tabs">
-          <button 
-            class="task-tab" 
+          <button
+            class="task-tab"
             :class="{ 'task-tab--active': currentFilter === 'all' }"
             @click="setFilter('all')"
           >
             Hamısı ({{ stats.total }})
           </button>
-          <button 
-            class="task-tab" 
+          <button
+            class="task-tab"
             :class="{ 'task-tab--active': currentFilter === 'active' }"
             @click="setFilter('active')"
           >
             Aktiv ({{ stats.active }})
           </button>
-          <button 
-            class="task-tab" 
+          <button
+            class="task-tab"
             :class="{ 'task-tab--active': currentFilter === 'completed' }"
             @click="setFilter('completed')"
           >
@@ -181,11 +349,11 @@ export const TasksView = {
         </div>
 
         <div class="task-search-group">
-          <input 
-            v-model="searchQuery" 
-            type="text" 
-            class="task-search-input" 
-            placeholder="Axtarış..." 
+          <input
+            v-model="searchQuery"
+            type="text"
+            class="task-search-input"
+            placeholder="Axtarış..."
           />
           <select v-model="priorityFilter" class="task-priority-filter">
             <option value="all">Bütün Prioritetlər</option>
@@ -198,10 +366,10 @@ export const TasksView = {
 
       <!-- Task Items List -->
       <div class="task-list">
-        <div 
-          v-for="task in tasks" 
-          :key="task.id" 
-          class="task-item" 
+        <div
+          v-for="task in tasks"
+          :key="task.id"
+          class="task-item"
           :class="{ 'task-item--done': task.done }"
         >
           <button class="task-item__check-btn" @click="handleToggle(task.id)">
@@ -215,11 +383,19 @@ export const TasksView = {
             <div class="task-item__meta">
               <span class="badge badge--dim">{{ task.category }}</span>
               <span class="task-item__time">{{ task.createdAt }}</span>
+              <span v-if="task.dueDate" class="task-item__due">📅 {{ task.dueDate }}</span>
+            </div>
+            <!-- Description expand -->
+            <div v-if="task.description" class="task-item__desc-toggle">
+              <button type="button" class="task-item__expand-btn" @click="toggleExpand(task.id)">
+                {{ expandedTaskId === task.id ? '▲ Gizlət' : '▼ Təsvir' }}
+              </button>
+              <p v-if="expandedTaskId === task.id" class="task-item__desc">{{ task.description }}</p>
             </div>
           </div>
 
           <div class="task-item__actions">
-            <span 
+            <span
               class="badge"
               :class="{
                 'badge--protected': task.priority === 'High',
