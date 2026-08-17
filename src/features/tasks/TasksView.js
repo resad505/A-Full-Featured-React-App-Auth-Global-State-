@@ -56,25 +56,30 @@ export const TasksView = {
 
     const descRemaining = computed(() => 300 - (taskFields.description?.length || 0));
 
-    const handleCreateTask = () => {
+    const handleCreateTask = async () => {
       const valid = validateTaskForm();
       if (!valid) return;
 
       taskSubmitting.value = true;
-      setTimeout(() => {
-        globalStore.dispatch({
-          type: 'tasks/addTask',
-          payload: getTaskValues()
-        });
-        resetTaskForm();
-        taskSubmitting.value = false;
-      }, 200);
+      const values = getTaskValues();
+      resetTaskForm();
+      
+      // Dispatch optimistic add
+      globalStore.dispatch({
+        type: 'tasks/addTask',
+        payload: values
+      });
+      taskSubmitting.value = false;
     };
 
-    // ── Existing task controls ──────────────────────────────────────
+    // ── Existing task controls & Checkpoint 5 Optimistic features ──
     const tasks = computed(() => taskSlice.filteredTasks.value);
     const stats = computed(() => taskSlice.stats.value);
     const currentFilter = computed(() => taskSlice.filter.value);
+    const isForcingFailure = computed(() => taskSlice.isForcingApiFailure.value);
+    const pendingOps = computed(() => taskSlice.pendingOperationsCount.value);
+    const lastRollback = computed(() => taskSlice.lastRollbackLog.value);
+
     const searchQuery = computed({
       get: () => taskSlice.searchQuery.value,
       set: (val) => globalStore.dispatch({ type: 'tasks/setSearch', payload: val })
@@ -109,7 +114,11 @@ export const TasksView = {
       globalStore.dispatch({ type: 'tasks/testStaleClosure' });
     };
 
-    // Expanded task detail toggle (show description / dueDate)
+    const toggleFailureMode = () => {
+      taskSlice.toggleForceApiFailure();
+    };
+
+    // Expanded task detail toggle
     const expandedTaskId = ref(null);
     const toggleExpand = (id) => {
       expandedTaskId.value = expandedTaskId.value === id ? null : id;
@@ -124,19 +133,23 @@ export const TasksView = {
       touchTaskField,
       setTaskField,
       handleCreateTask,
-      // list
+      // list & stats
       tasks,
       stats,
       currentFilter,
       searchQuery,
       priorityFilter,
       staleLog,
+      isForcingFailure,
+      pendingOps,
+      lastRollback,
       handleToggle,
       handleDelete,
       setFilter,
       handleBulkComplete,
       handleClearCompleted,
       runStaleTest,
+      toggleFailureMode,
       expandedTaskId,
       toggleExpand
     };
@@ -147,11 +160,11 @@ export const TasksView = {
         <div class="view-top__left">
           <div class="view-top__badge">
             <span class="pulse-dot"></span>
-            <span>Qorunan Bölmə · Redux/Context Task Slice</span>
+            <span>Qorunan Bölmə · Optimistic UI & Mock CRUD</span>
           </div>
           <h1 class="view-top__title">Tapşırıqlar İdarəetməsi</h1>
           <p class="view-top__sub">
-            Qlobal vəziyyət (Global State) üzərindən idarə olunan asinxron CRUD və filtrləmə mərkəzi.
+            Optimistik UI (dərhal ekran yeniləməsi), asinxron API sorğuları və şəbəkə xətalarında avtomatik Rollback mexanizmi.
           </p>
         </div>
 
@@ -162,6 +175,46 @@ export const TasksView = {
           <button class="btn btn--sm btn--ghost" @click="handleClearCompleted">
             Tamamlananları Təmizlə
           </button>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <!-- CHECKPOINT 5: Optimistic UI & API Rollback Simulator Toolbar  -->
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <div class="api-sim-card" :class="{ 'api-sim-card--failing': isForcingFailure }">
+        <div class="api-sim-card__header">
+          <div class="api-sim-card__title-col">
+            <span class="badge" :class="isForcingFailure ? 'badge--protected' : 'badge--public'">
+              {{ isForcingFailure ? '🔴 XƏTA SİMULYASİYASI AKTİV' : '🟢 NORMAL APİ REJİMİ' }}
+            </span>
+            <h3 class="api-sim-card__title">Checkpoint 5 · Optimistic UI & Rollback Ssenarisi</h3>
+          </div>
+          <button 
+            type="button" 
+            class="btn btn--sm" 
+            :class="isForcingFailure ? 'btn--solid' : 'btn--danger-ghost'"
+            @click="toggleFailureMode"
+          >
+            {{ isForcingFailure ? '✓ Normal Rejimə Keç' : '⚡ 500 Xətası Simulyasiya Et (Rollback Testi)' }}
+          </button>
+        </div>
+
+        <p class="api-sim-card__desc">
+          <template v-if="!isForcingFailure">
+            <strong>Optimistik Rejim:</strong> Tapşırıq əlavə etdikdə və ya sildikdə UI dərhal yenilənir, arxa fonda Mock API (250–400ms) sorğusu icra olunur və təsdiqlənir.
+          </template>
+          <template v-else>
+            <strong style="color: var(--color-danger, #ef4444);">Rollback Test Rejimi Aktivdir:</strong> İndi yeni tapşırıq əlavə edin və ya mövcud olanı silin/dəyişin — UI dərhal dəyişəcək (Optimistic), 300ms sonra Mock API 500 xətası qaytaracaq və state əvvəlki dəqiq vəziyyətinə <strong>avtomatik Rollback</strong> edəcək!
+          </template>
+        </p>
+
+        <!-- Rollback banner -->
+        <div v-if="lastRollback" class="rollback-banner">
+          <span class="rollback-banner__icon">🔄</span>
+          <div class="rollback-banner__text">
+            <strong>Son Rollback Hadisəsi ({{ lastRollback.timestamp }}):</strong>
+            <span>Əməliyyat: <code>{{ lastRollback.action }}</code> · Səbəb: {{ lastRollback.reason }}</span>
+          </div>
         </div>
       </div>
 
@@ -196,7 +249,7 @@ export const TasksView = {
       <div class="task-create-card task-create-card--enhanced">
         <div class="task-create-card__header">
           <span class="badge badge--warning">Checkpoint 4 · useForm Validation</span>
-          <h3 class="task-create-card__title">Yeni Tapşırıq Əlavə Et</h3>
+          <h3 class="task-create-card__title">Yeni Tapşırıq Əlavə Et (Optimistic)</h3>
         </div>
 
         <form class="task-create-form task-create-form--enhanced" @submit.prevent="handleCreateTask" novalidate>
@@ -370,7 +423,10 @@ export const TasksView = {
           v-for="task in tasks"
           :key="task.id"
           class="task-item"
-          :class="{ 'task-item--done': task.done }"
+          :class="{ 
+            'task-item--done': task.done,
+            'task-item--syncing': task._syncStatus === 'syncing'
+          }"
         >
           <button class="task-item__check-btn" @click="handleToggle(task.id)">
             <span class="task-item__check-box">
@@ -379,7 +435,12 @@ export const TasksView = {
           </button>
 
           <div class="task-item__body">
-            <span class="task-item__title">{{ task.title }}</span>
+            <div class="task-item__title-row">
+              <span class="task-item__title">{{ task.title }}</span>
+              <span v-if="task._syncStatus === 'syncing'" class="badge badge--warning badge--pulse">
+                ⏳ API Sync...
+              </span>
+            </div>
             <div class="task-item__meta">
               <span class="badge badge--dim">{{ task.category }}</span>
               <span class="task-item__time">{{ task.createdAt }}</span>
@@ -405,7 +466,7 @@ export const TasksView = {
             >
               {{ task.priority }}
             </span>
-            <button class="task-item__del-btn" @click="handleDelete(task.id)" title="Tapşırığı sil">
+            <button class="task-item__del-btn" @click="handleDelete(task.id)" title="Tapşırığı sil (Optimistic)">
               ✕
             </button>
           </div>

@@ -1,5 +1,6 @@
 import { ref, computed } from 'vue';
 import { globalStore } from '../state/index.js';
+import { taskSlice } from '../../features/tasks/taskSlice.js';
 
 export const StateInspector = {
   name: 'StateInspector',
@@ -11,6 +12,7 @@ export const StateInspector = {
 
     const stateTree = computed(() => globalStore.getState());
     const actionHistory = computed(() => globalStore.actionHistory.value);
+    const isForcingFailure = computed(() => taskSlice.isForcingApiFailure.value);
 
     const toggleOpen = () => {
       isOpen.value = !isOpen.value;
@@ -32,6 +34,10 @@ export const StateInspector = {
       globalStore.dispatch({ type, payload });
     };
 
+    const toggleFailureMode = () => {
+      taskSlice.toggleForceApiFailure();
+    };
+
     const clearHistory = () => {
       globalStore.clearActionHistory();
     };
@@ -43,9 +49,11 @@ export const StateInspector = {
       customPayload,
       stateTree,
       actionHistory,
+      isForcingFailure,
       toggleOpen,
       handleCustomDispatch,
       runQuickAction,
+      toggleFailureMode,
       clearHistory
     };
   },
@@ -70,7 +78,7 @@ export const StateInspector = {
 
         <!-- Quick actions toolbar -->
         <div class="state-inspector__quick-actions">
-          <span class="state-inspector__quick-label">Sürətli Dispatch:</span>
+          <span class="state-inspector__quick-label">Sürətli Dispatch (Optimistic CRUD):</span>
           <div class="state-inspector__quick-btns">
             <button 
               class="demo-btn" 
@@ -86,9 +94,17 @@ export const StateInspector = {
             </button>
             <button 
               class="demo-btn" 
-              @click="runQuickAction('tasks/addTask', { title: 'State Inspector yoxlanışı tamamlandı', priority: 'High', category: 'DevTools' })"
+              @click="runQuickAction('tasks/addTask', { title: 'Optimistic CRUD Yoxlanışı #' + Math.floor(Math.random() * 1000), priority: 'High', category: 'API' })"
             >
-              + Yeni Tapşırıq
+              + Optimistic Task
+            </button>
+            <button 
+              class="demo-btn" 
+              :class="{ 'demo-btn--active': isForcingFailure }"
+              @click="toggleFailureMode"
+              title="Mock API 500 xətası və Rollback testini aktivləşdirir"
+            >
+              {{ isForcingFailure ? '🔴 Xəta Aktiv (Rollback)' : '⚡ 500 Rollback Testi' }}
             </button>
             <button 
               class="demo-btn" 
