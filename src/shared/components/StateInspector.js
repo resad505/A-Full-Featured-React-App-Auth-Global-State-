@@ -39,12 +39,10 @@ export const StateInspector = {
     };
 
     /**
-     * Checkpoint 6: Simulate unhandled runtime exception for Error Boundary testing
+     * Checkpoint 6: Simulate unhandled runtime exception for Global Error Handler testing
      */
     const simulateCrash = () => {
-      setTimeout(() => {
-        throw new Error('Simulated Crash from StateInspector: Null pointer / render exception (Quality Check 6 Test)');
-      }, 50);
+      throw new Error('Simulated Crash from StateInspector: Unhandled runtime exception in Vue call stack (Quality Check 6 Test)');
     };
 
     const clearHistory = () => {
