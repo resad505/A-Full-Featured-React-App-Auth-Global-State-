@@ -105,9 +105,10 @@ class ApiClient {
 
     const authHeader = headers['Authorization'];
     const token = authHeader ? authHeader.replace('Bearer ', '') : null;
+    const requiresAuth = options.requiresAuth !== false;
 
-    // Evaluate token validity
-    if (!token || isTokenExpired(token)) {
+    // Evaluate token validity for authenticated endpoints
+    if (requiresAuth && (!token || isTokenExpired(token))) {
       return this._handleResponseError(401, endpoint);
     }
 
@@ -231,18 +232,20 @@ class ApiClient {
 
   /**
    * POST /api/cart/items (Add to Cart)
+   * Public / Guest compatible: guest cart operates locally without 401 redirects
    */
   async addToCart(item) {
     const res = await this.request('/api/cart/items', {
       method: 'POST',
-      body: JSON.stringify(item)
+      body: JSON.stringify(item),
+      requiresAuth: false
     });
     if (!res.ok) return res;
 
     return {
       status: 201,
       ok: true,
-      data: { ...item, serverSynced: true }
+      data: { ...item, serverSynced: !!authStore.state.token, localGuest: !authStore.state.token }
     };
   }
 
@@ -251,7 +254,8 @@ class ApiClient {
    */
   async removeFromCart(id) {
     const res = await this.request(`/api/cart/items/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      requiresAuth: false
     });
     if (!res.ok) return res;
 
@@ -268,14 +272,15 @@ class ApiClient {
   async updateCartQty(id, qty) {
     const res = await this.request(`/api/cart/items/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ qty })
+      body: JSON.stringify({ qty }),
+      requiresAuth: false
     });
     if (!res.ok) return res;
 
     return {
       status: 200,
       ok: true,
-      data: { id, qty, serverSynced: true }
+      data: { id, qty, serverSynced: !!authStore.state.token, localGuest: !authStore.state.token }
     };
   }
 }
