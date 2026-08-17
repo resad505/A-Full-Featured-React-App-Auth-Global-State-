@@ -3260,3 +3260,198 @@ code {
   color: #fb7185 !important;
 }
 
+.demo-btn--crash {
+  background: rgba(244, 63, 94, 0.15) !important;
+  border-color: rgba(244, 63, 94, 0.4) !important;
+  color: #fb7185 !important;
+}
+.demo-btn--crash:hover {
+  background: rgba(244, 63, 94, 0.3) !important;
+  border-color: var(--col-err) !important;
+}
+
+/* ==========================================================================
+   Checkpoint 6: Error Boundary & Crash Fallback Styles (BEM)
+   ========================================================================== */
+
+.error-boundary {
+  width: 100%;
+}
+
+.error-fallback-card {
+  background: rgba(30, 18, 22, 0.95);
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  border-radius: var(--r-xl);
+  padding: 24px 28px;
+  margin: 20px 0;
+  box-shadow: 0 12px 36px rgba(244, 63, 94, 0.12);
+  animation: fadeIn 0.3s ease;
+}
+
+.error-fallback-card__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.error-fallback-card__icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-lg);
+  background: rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.error-fallback-card__meta {
+  flex: 1;
+}
+
+.error-fallback-card__title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 6px 0 4px;
+}
+
+.error-fallback-card__sub {
+  font-size: 0.86rem;
+  color: var(--col-text-2);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.error-fallback-card__details {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.error-fallback-card__row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.84rem;
+}
+
+.error-fallback-card__label {
+  font-family: var(--font-mono);
+  color: var(--col-text-3);
+  font-size: 0.76rem;
+  min-width: 110px;
+}
+
+.error-fallback-card__msg {
+  color: #fb7185;
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  word-break: break-all;
+}
+
+.error-fallback-card__time {
+  font-family: var(--font-mono);
+  color: var(--col-text-2);
+  font-size: 0.8rem;
+}
+
+.error-fallback-card__stack-toggle {
+  margin-top: 6px;
+}
+
+.error-fallback-card__stack-summary {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--col-text-3);
+  cursor: pointer;
+  padding: 4px 0;
+}
+.error-fallback-card__stack-summary:hover {
+  color: var(--col-text);
+}
+
+.error-fallback-card__stack {
+  margin-top: 8px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: var(--r-md);
+  color: var(--col-text-3);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  max-height: 160px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.error-fallback-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+/* Dashboard local ErrorBoundary demo section */
+.eb-demo-panel {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-acc);
+  border-radius: var(--r-xl);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.eb-demo-panel__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.eb-demo-panel__title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.crash-widget {
+  background: var(--col-surface-hi);
+  border: 1px solid var(--col-border-md);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+}
+
+.crash-widget__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.crash-widget__metrics {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--col-text-3);
+}
+
+.crash-widget__desc {
+  font-size: 0.84rem;
+  color: var(--col-text-2);
+  line-height: 1.5;
+  margin-bottom: 14px;
+}
+
+

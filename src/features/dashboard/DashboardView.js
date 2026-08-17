@@ -1,10 +1,11 @@
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { authStore } from '../../features/auth/authStore.js';
 import { cartSlice } from '../../features/cart/cartSlice.js';
 import { taskSlice } from '../../features/tasks/taskSlice.js';
 import { globalStore } from '../../shared/state/index.js';
 import { useRouter } from 'vue-router';
 import { SessionInspector } from '../../shared/components/SessionInspector.js';
+import { ErrorBoundary } from '../../shared/components/ErrorBoundary.js';
 import { useForm } from '../../shared/composables/useForm.js';
 import {
   validateRequired,
@@ -14,10 +15,50 @@ import {
   validateNoHtml
 } from '../../shared/utils/validators.js';
 
+// Subcomponent used specifically to demonstrate local ErrorBoundary isolation
+const CrashTestWidget = {
+  name: 'CrashTestWidget',
+  setup() {
+    const shouldCrash = ref(false);
+
+    const triggerCrash = () => {
+      shouldCrash.value = true;
+    };
+
+    const computedData = computed(() => {
+      if (shouldCrash.value) {
+        throw new Error('Null Reference Exception in CrashTestWidget: cannot read property "renderMetrics" of undefined (Checkpoint 6 Test)');
+      }
+      return { status: 'Normal', uptime: '99.98%', ping: '24ms' };
+    });
+
+    return {
+      triggerCrash,
+      computedData
+    };
+  },
+  template: `
+    <div class="crash-widget">
+      <div class="crash-widget__top">
+        <span class="badge badge--success">Komponent Statusu: {{ computedData.status }}</span>
+        <span class="crash-widget__metrics">Uptime: {{ computedData.uptime }} · Latency: {{ computedData.ping }}</span>
+      </div>
+      <p class="crash-widget__desc">
+        Bu komponent <code>&lt;ErrorBoundary name="Sistem Metrikləri"&gt;</code> ilə əhatələnib. Aşağıdakı düyməyə basaraq xətanı təcrid olunmuş şəkildə test edə bilərsiniz:
+      </p>
+      <button type="button" class="btn btn--danger-ghost btn--sm" @click="triggerCrash">
+        💥 Bu Komponenti Çökdür (Simulate Component Crash)
+      </button>
+    </div>
+  `
+};
+
 export const DashboardView = {
   name: 'DashboardView',
   components: {
-    SessionInspector
+    SessionInspector,
+    ErrorBoundary,
+    CrashTestWidget
   },
   setup() {
     const router = useRouter();
@@ -69,7 +110,6 @@ export const DashboardView = {
           (v) => validateNoHtml(v)
         ],
         email: [
-          // Optional: only validate format if provided
           (v) => validateEmail(v)
         ]
       }
@@ -167,6 +207,19 @@ export const DashboardView = {
         </div>
       </div>
 
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <!-- CHECKPOINT 6: Local Component Error Boundary Test Section     -->
+      <!-- ══════════════════════════════════════════════════════════════ -->
+      <div class="eb-demo-panel">
+        <div class="eb-demo-panel__top">
+          <span class="badge badge--warning">Checkpoint 6 · Error Boundary Demo</span>
+          <h3 class="eb-demo-panel__title">Lokal Komponent Xəta Təcridi (onErrorCaptured)</h3>
+        </div>
+        <ErrorBoundary name="Sistem Metrikləri Paneli">
+          <CrashTestWidget />
+        </ErrorBoundary>
+      </div>
+
       <!-- Quick nav to other protected sections -->
       <div class="quick-nav">
         <h3 class="quick-nav__title">Qorunan Digər Bölmələr</h3>
@@ -174,7 +227,7 @@ export const DashboardView = {
           <router-link to="/tasks" class="quick-nav__item">
             <div class="quick-nav__info">
               <span class="quick-nav__label">/tasks ({{ activeTasksCount }} gözləyir)</span>
-              <span class="quick-nav__desc">Tapşırıqlar Lövhəsi və Stale Closure Testi</span>
+              <span class="quick-nav__desc">Tapşırıqlar Lövhəsi və Optimistic CRUD</span>
             </div>
             <span class="quick-nav__arrow">→</span>
           </router-link>
