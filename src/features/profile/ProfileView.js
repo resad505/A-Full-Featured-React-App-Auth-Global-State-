@@ -1,16 +1,16 @@
 import { computed } from 'vue';
-import { authStore } from '../state/authStore.js';
-import { globalStore } from '../state/index.js';
-import { SessionInspector } from '../components/SessionInspector.js';
+import { authStore } from '../auth/authStore.js';
+import { globalStore } from '../../shared/state/index.js';
+import { SessionInspector } from '../../shared/components/SessionInspector.js';
 import { useRouter } from 'vue-router';
-import { useForm } from '../composables/useForm.js';
+import { useForm } from '../../shared/composables/useForm.js';
 import {
   validateRequired,
   validateMinLength,
   validateMaxLength,
   validateUrl,
   validateNoHtml
-} from '../utils/validators.js';
+} from '../../shared/utils/validators.js';
 
 export const ProfileView = {
   name: 'ProfileView',

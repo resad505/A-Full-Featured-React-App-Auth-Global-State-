@@ -1,12 +1,13 @@
 import { reactive, computed } from 'vue';
-import { authStore } from './authStore.js';
-import { cartSlice } from './slices/cartSlice.js';
-import { taskSlice } from './slices/taskSlice.js';
+import { authStore } from '../../features/auth/authStore.js';
+import { cartSlice } from '../../features/cart/cartSlice.js';
+import { taskSlice } from '../../features/tasks/taskSlice.js';
 import { toastSlice } from './slices/toastSlice.js';
-import { profileSlice } from './slices/profileSlice.js';
+import { profileSlice } from '../../features/profile/profileSlice.js';
 
 /**
  * Global Store Architecture implementing Redux Toolkit / Context + Reducer Dispatch Pattern
+ * Checkpoint 3: Centralized state management with action history and middleware logging
  */
 
 const actionHistory = reactive([]);
@@ -53,7 +54,6 @@ export const globalStore = {
     }
 
     const { type, payload } = action;
-    const [sliceName, actionName] = type.split('/');
 
     // Middleware pre-hook
     const prevState = this.getState();
@@ -137,7 +137,10 @@ export const globalStore = {
         break;
 
       default:
-        console.warn(`[Store] Unknown action type "${type}"`);
+        // Unknown actions are silently logged (store/init etc.)
+        if (!type.startsWith('store/')) {
+          console.warn(`[Store] Unknown action type "${type}"`);
+        }
     }
 
     // Middleware post-hook (Logging)

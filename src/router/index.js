@@ -1,14 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { authStore } from '../state/authStore.js';
-import { isTokenExpired } from '../utils/token.js';
-import { HomeView } from '../views/HomeView.js';
-import { CatalogView } from '../views/CatalogView.js';
-import { LoginView } from '../views/LoginView.js';
-import { DashboardView } from '../views/DashboardView.js';
-import { TasksView } from '../views/TasksView.js';
-import { CartView } from '../views/CartView.js';
-import { ProfileView } from '../views/ProfileView.js';
-import { NotFoundView } from '../views/NotFoundView.js';
+import { authStore } from '../features/auth/authStore.js';
+import { isTokenExpired } from '../shared/utils/token.js';
+import { HomeView } from '../shared/views/HomeView.js';
+import { CatalogView } from '../features/catalog/CatalogView.js';
+import { LoginView } from '../features/auth/LoginView.js';
+import { DashboardView } from '../features/dashboard/DashboardView.js';
+import { TasksView } from '../features/tasks/TasksView.js';
+import { CartView } from '../features/cart/CartView.js';
+import { ProfileView } from '../features/profile/ProfileView.js';
+import { NotFoundView } from '../shared/views/NotFoundView.js';
 
 const routes = [
   {

@@ -1,10 +1,10 @@
 import { createApp } from 'vue';
 import { router } from './router/index.js';
-import { AppHeader } from './components/AppHeader.js';
-import { RouteBanner } from './components/RouteBanner.js';
-import { AppFooter } from './components/AppFooter.js';
-import { ToastContainer } from './components/ToastContainer.js';
-import { StateInspector } from './components/StateInspector.js';
+import { AppHeader } from './shared/components/AppHeader.js';
+import { RouteBanner } from './shared/components/RouteBanner.js';
+import { AppFooter } from './shared/components/AppFooter.js';
+import { ToastContainer } from './shared/components/ToastContainer.js';
+import { StateInspector } from './shared/components/StateInspector.js';
 
 const App = {
   name: 'App',

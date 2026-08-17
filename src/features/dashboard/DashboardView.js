@@ -1,18 +1,18 @@
 import { computed } from 'vue';
-import { authStore } from '../state/authStore.js';
-import { cartSlice } from '../state/slices/cartSlice.js';
-import { taskSlice } from '../state/slices/taskSlice.js';
-import { globalStore } from '../state/index.js';
+import { authStore } from '../../features/auth/authStore.js';
+import { cartSlice } from '../../features/cart/cartSlice.js';
+import { taskSlice } from '../../features/tasks/taskSlice.js';
+import { globalStore } from '../../shared/state/index.js';
 import { useRouter } from 'vue-router';
-import { SessionInspector } from '../components/SessionInspector.js';
-import { useForm } from '../composables/useForm.js';
+import { SessionInspector } from '../../shared/components/SessionInspector.js';
+import { useForm } from '../../shared/composables/useForm.js';
 import {
   validateRequired,
   validateMinLength,
   validateMaxLength,
   validateEmail,
   validateNoHtml
-} from '../utils/validators.js';
+} from '../../shared/utils/validators.js';
 
 export const DashboardView = {
   name: 'DashboardView',
@@ -93,8 +93,6 @@ export const DashboardView = {
             duration: 5000
           }
         });
-        // Log to action history as a custom event
-        globalStore.dispatch({ type: 'toasts/add', payload: { message: '', type: 'info', duration: 1 } });
         resetFb();
         fbSubmitting.value = false;
       }, 600);

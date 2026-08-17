@@ -1,4 +1,4 @@
-import { authStore } from '../state/authStore.js';
+import { authStore } from '../../features/auth/authStore.js';
 
 export const RouteBanner = {
   name: 'RouteBanner',

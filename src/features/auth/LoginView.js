@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { authStore } from '../state/authStore.js';
+import { authStore } from '../auth/authStore.js';
 
 export const LoginView = {
   name: 'LoginView',

@@ -1,6 +1,6 @@
-import { authStore } from '../state/authStore.js';
+import { authStore } from '../../features/auth/authStore.js';
 import { isTokenExpired } from '../utils/token.js';
-import { router } from '../router/index.js';
+import { router } from '../../router/index.js';
 
 /**
  * Mock API Client with Request & Response Interceptors
