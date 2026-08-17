@@ -1,7 +1,7 @@
 import { computed } from 'vue';
-import { authStore } from '../state/authStore.js';
-import { cartSlice } from '../state/slices/cartSlice.js';
-import { taskSlice } from '../state/slices/taskSlice.js';
+import { authStore } from '../../features/auth/authStore.js';
+import { cartSlice } from '../../features/cart/cartSlice.js';
+import { taskSlice } from '../../features/tasks/taskSlice.js';
 import { useRouter, useRoute } from 'vue-router';
 
 export const AppHeader = {

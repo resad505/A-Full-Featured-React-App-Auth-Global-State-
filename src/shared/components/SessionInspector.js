@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue';
-import { authStore } from '../state/authStore.js';
+import { authStore } from '../../features/auth/authStore.js';
 import { apiClient } from '../services/apiClient.js';
 import { useRouter } from 'vue-router';
 

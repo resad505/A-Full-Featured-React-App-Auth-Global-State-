@@ -1,5 +1,5 @@
 import { reactive, computed } from 'vue';
-import { toastSlice } from './toastSlice.js';
+import { toastSlice } from '../../shared/state/slices/toastSlice.js';
 
 const STORAGE_KEY = 'flin_profile_data';
 

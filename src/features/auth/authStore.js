@@ -1,5 +1,5 @@
 import { reactive, computed } from 'vue';
-import { createMockJwt, decodeJwt, isTokenExpired, getTokenRemainingSeconds } from '../utils/token.js';
+import { createMockJwt, decodeJwt, isTokenExpired, getTokenRemainingSeconds } from '../../shared/utils/token.js';
 
 const STORAGE_KEY = 'flin_auth_token';
 const USER_KEY = 'flin_user_data';

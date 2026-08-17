@@ -1,5 +1,5 @@
 import { reactive, computed } from 'vue';
-import { toastSlice } from './toastSlice.js';
+import { toastSlice } from '../../shared/state/slices/toastSlice.js';
 
 const STORAGE_KEY = 'flin_tasks_state';
 
@@ -231,8 +231,6 @@ export const taskSlice = {
 
   /**
    * Quality Check 2: Stale Closure vs Fresh Reducer Dispatch Test Scenario
-   * Demonstrates the classic stale closure trap where an asynchronous handler captures old state,
-   * versus how our Reducer store always resolves fresh state.
    */
   runStaleClosureTest() {
     // Capture state snapshot at this exact tick (simulating missing dependency / stale closure)
@@ -254,8 +252,6 @@ export const taskSlice = {
     };
 
     setTimeout(() => {
-      // In a stale closure bug, handler reads capturedStaleCount (old value)
-      // In our Reducer/reactive architecture, state.tasks.length is always fresh
       const freshCount = state.tasks.length;
       
       state.staleLog = {

@@ -1,14 +1,14 @@
 import { ref, computed } from 'vue';
-import { globalStore } from '../state/index.js';
-import { taskSlice } from '../state/slices/taskSlice.js';
-import { useForm } from '../composables/useForm.js';
+import { globalStore } from '../../shared/state/index.js';
+import { taskSlice } from './taskSlice.js';
+import { useForm } from '../../shared/composables/useForm.js';
 import {
   validateRequired,
   validateMinLength,
   validateMaxLength,
   validateFutureDate,
   validateNoHtml
-} from '../utils/validators.js';
+} from '../../shared/utils/validators.js';
 
 export const TasksView = {
   name: 'TasksView',

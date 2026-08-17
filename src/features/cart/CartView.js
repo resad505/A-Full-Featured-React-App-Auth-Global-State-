@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue';
-import { globalStore } from '../state/index.js';
-import { cartSlice } from '../state/slices/cartSlice.js';
-import { toastSlice } from '../state/slices/toastSlice.js';
+import { globalStore } from '../../shared/state/index.js';
+import { cartSlice } from './cartSlice.js';
+import { toastSlice } from '../../shared/state/slices/toastSlice.js';
 
 export const CartView = {
   name: 'CartView',
