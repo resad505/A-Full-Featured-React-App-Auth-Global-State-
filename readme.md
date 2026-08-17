@@ -1,6 +1,39 @@
-# Flin · Vue 3 Frontend Tətbiqi (Checkpoint 2: Authentication Flow)
+# Flin · Vue 3 Frontend Tətbiqi (Auth + Global State)
 
 Bu layihə **Vue 3**, **Vue Router 4**, **JWT (JSON Web Token) Sessiya İdarəetməsi** və **BEM (Block Element Modifier)** metodologiyası ilə hazırlanmış, yüksək keyfiyyətli Developer-First frontend tətbiqidir.
+
+---
+
+## 📌 Checkpoint 1: İcra Olunmuş İşlər və Nəticələr (15 Bal)
+
+Bu mərhələdə (`guide.md:L3`, `assestments.md`, `quality__checks.md` bələdçilərinə uyğun olaraq) layihənin naviqasiya, qorunan marşrutlar və frontend arxitektura bazası tam qurulmuşdur:
+
+### 1. Marşrutlaşdırma (Routing) və Route Kateqoriyaları
+* **İctimai Marşrutlar (Public Routes)**:
+  * `/` — Əsas ana səhifə, interaktiv route test konsolu və xüsusiyyətlər bölməsi.
+  * `/catalog` — Məhsul və xidmətlər kataloqu (giriş tələb olunmur).
+* **Qorunan Marşrutlar (Protected Routes - `meta: { requiresAuth: true }`)**:
+  * `/dashboard` — İstifadəçi idarə paneli, profil statistikası və qorunan menyu.
+  * `/tasks` — Tapşırıqlar lövhəsi və iş axını.
+  * `/cart` — Alış-veriş səbəti və checkout.
+  * `/profile` — İstifadəçi hesabı və sessiya məlumatları.
+* **Qonaq Marşrutu (Guest Route - `meta: { requiresGuest: true }`)**:
+  * `/login` — Giriş portalı. Daxil olmuş istifadəçilər bu səhifəyə daxil olduqda avtomatik olaraq `/dashboard`-a yönləndirilir.
+* **404 Xəta Marşrutu (Catch-All)**:
+  * `/:pathMatch(.*)*` — Mövcud olmayan və ya səhv yazılan bütün URL-lər xüsusi dizayn edilmiş `/404` (`NotFoundView`) səhifəsinə yönləndirilir.
+
+### 2. Vue Router Navigation Guards (`beforeEach`) Mexanizmi
+Qorunan səhifələrə icazəsiz girişlərin qarşısını almaq üçün `src/router/index.js` daxilində qlobal `router.beforeEach` quraşdırılmışdır:
+1. **Qeydiyyatsız Girişin Əngəllənməsi və Redirect**:
+   * İstifadəçi sistemə daxil olmadan `/dashboard`, `/tasks` və ya `/cart` kimi qorunan səhifəyə keçmək istədikdə, navigation guard keçidi dayandırır.
+   * `authStore.setNotice()` vasitəsilə istifadəçiyə `"🔒 Giriş Tələb Olunur"` xəbərdarlığı göstərilir.
+   * İstifadəçi avtomatik olaraq `/login?redirect=${encodeURIComponent(to.fullPath)}` ünvanına yönləndirilir.
+2. **Uğurlu Girişdən Sonra Hədəf Səhifəyə Qayıdış**:
+   * İstifadəçi `/login` formasını təsdiqlədikdə, URL-dəki `redirect` parametri yoxlanılır və istifadəçi birbaşa ilk daxil olmaq istədiyi səhifəyə göndərilir.
+3. **Daxil Olmuş İstifadəçi Qoruması**:
+   * Əgər istifadəçi artıq autentifikasiyadan keçibsə və `/login` səhifəsinə daxil olmağa çalışarsa, dərhal `/dashboard`-a yönləndirilir.
+4. **Dinamik Səhifə Başlıqları (SEO & UX)**:
+   * Hər route dəyişdikdə brauzerin səhifə başlığı `document.title = ...` dinamik yenilənir.
 
 ---
 
@@ -21,8 +54,6 @@ Bu mərhələdə (`guide.md:L4`, `assestments.md`, `quality__checks.md` sənədl
 * **Redirect & 401 Xəbərdarlığı**:
   * Qorunan marşrutdan və ya 401 sessiya bitməsindən yönləndirildikdə istifadəçiyə dəqiq kontekstual bildiriş göstərilir.
 
----
-
 ### 2. JWT Token Strukturu və Saxlanması (`src/utils/token.js` & `src/state/authStore.js`)
 * **3 Hissəli Base64Url Standart JWT Generator**:
   * **Header**: `{ "alg": "HS256", "typ": "JWT" }`
@@ -34,15 +65,11 @@ Bu mərhələdə (`guide.md:L4`, `assestments.md`, `quality__checks.md` sənədl
   * `isTokenExpired()` — Tokenin son istifadə vaxtının cari vaxtla müqayisəsi.
   * `getTokenRemainingSeconds()` — Sessiyanın bitməsinə qalan saniyələrin hesablanması.
 
----
-
 ### 3. Səhifə Yeniləndikdə Sessiyanın Qorunması (Session Protection on Refresh)
 * İstifadəçi qorunan səhifələrdə (`/dashboard`, `/tasks`, `/cart`, `/profile`) olarkən səhifəni yenilədikdə (`F5` və ya `Ctrl+R`):
   * `authStore` dərhal `localStorage`-dən (`flin_auth_token`, `flin_user_data`) məlumatları bərpa edir.
   * Tokenin etibarlılığı yoxlanılır; əgər vaxtı keçməyibsə, istifadəçi login-ə atılmadan olduğu qorunan səhifədə qalır.
   * Əgər tokenin vaxtı bitibsə, sessiya təmizlənir və istifadəçi `/login?redirect=...&reason=401_expired` ünvanına yönləndirilir.
-
----
 
 ### 4. Təmiz Çıxış və Vəziyyət Sıfırlanması (Quality Check 3)
 * İstifadəçi çıxış etdikdə (`logout`):
@@ -50,14 +77,10 @@ Bu mərhələdə (`guide.md:L4`, `assestments.md`, `quality__checks.md` sənədl
   * `localStorage`-dən bütün həssas açarlar (`flin_auth_token`, `flin_user_data`, `flin_remember_me`) tam silinir.
   * Brauzerin "Geri" (Back) düyməsi ilə qorunan səhifəyə qayıtmaq cəhdi router guard tərəfindən bloklanır və yenidən giriş tələb olunur.
 
----
-
 ### 5. Mock API Interceptor və 401 Token Expiration Simulyasiyası (Quality Check 1)
 * `src/services/apiClient.js` daxilində tam Request və Response interceptor arxitekturası qurulmuşdur:
   * **Request**: Hər sorğuya avtomatik `Authorization: Bearer <token>` əlavə edir.
   * **Response**: `401 Unauthorized` cavabı aşkar edildikdə avtomatik olaraq sessiyanı sonlandırır, bildiriş qoyur və heç bir sonsuz dövrə (infinite loop) və ya tətbiq qəzası (crash) yaratmadan login səhifəsinə yönləndirir.
-
----
 
 ### 6. İnteraktiv Token & Session Inspector (`src/components/SessionInspector.js`)
 Dashboard və Profil səhifələrinə inteqrasiya edilmiş xüsusi test konsolu vasitəsilə:
@@ -142,8 +165,14 @@ npm.cmd run build
 
 ---
 
-## 🧪 Qiymətləndirmə üçün Canlı Test Ssenariləri (Checkpoint 2)
+## 🧪 Qiymətləndirmə üçün Canlı Test Ssenariləri
 
+### Checkpoint 1 Testləri:
+1. **Qorunan Səhifə Testi**: Sistemə daxil olmadan ana səhifədəki **"Dashboard-a Keç"** düyməsinə klikləyin → Keçid bloklanır, `"Giriş Tələb Olunur"` xəbərdarlığı çıxır və URL `/login?redirect=%2Fdashboard` olur.
+2. **Qonaq Qoruması**: Giriş etdikdən sonra brauzerdə `/login` yazın → Avtomatik olaraq `/dashboard`-a yönləndirilirsiniz.
+3. **404 Xəta Testi**: Brauzerdə `http://localhost:3000/sehife-yoxdur` yazın → Xüsusi 404 səhifəsi göstərilir.
+
+### Checkpoint 2 Testləri:
 1. **Giriş və Validasiya Testi**:
    * `/login` səhifəsinə keçin, səhv formatda email və ya qısa şifrə daxil edin → Sahələrin altında qırmızı xəta mesajları görünəcək.
    * Hazır **"Architect (Sarah)"** düyməsinə klikləyin → Forma dərhal doldurulur.
