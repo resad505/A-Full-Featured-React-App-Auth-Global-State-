@@ -127,6 +127,7 @@ export const authStore = {
 
   /**
    * Complete clean logout - wipes all sensitive state to prevent back-button access (Quality Check 3)
+   * and prevents data leakage across demo accounts
    */
   logout(reason = 'Çıxış edildi. Qorunan marşrutlar aktiv guard altındadır.') {
     if (sessionTimer) {
@@ -138,10 +139,13 @@ export const authStore = {
     state.user = null;
     state.sessionSecondsRemaining = 0;
 
-    // Clear all storage traces
+    // Clear all storage traces including tasks, cart, and profile data
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(REMEMBER_KEY);
+    localStorage.removeItem('flin_tasks_state');
+    localStorage.removeItem('flin_cart_state');
+    localStorage.removeItem('flin_profile_data');
 
     if (reason) {
       this.setNotice(reason, 'info');
