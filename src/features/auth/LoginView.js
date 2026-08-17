@@ -1,6 +1,12 @@
 import { ref, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { authStore } from '../auth/authStore.js';
+import { useForm } from '../../shared/composables/useForm.js';
+import {
+  validateRequired,
+  validateEmail,
+  validateMinLength
+} from '../../shared/utils/validators.js';
 
 export const LoginView = {
   name: 'LoginView',
@@ -8,13 +14,35 @@ export const LoginView = {
     const route = useRoute();
     const router = useRouter();
 
-    const email = ref('developer@flin.io');
-    const password = ref('password123');
-    const role = ref('Frontend Architect');
-    const rememberMe = ref(true);
+    const {
+      fields,
+      errors: formErrors,
+      isSubmitting,
+      touchField,
+      setField,
+      validateAll,
+      resetForm,
+      getValues
+    } = useForm(
+      {
+        email: 'developer@flin.io',
+        password: 'password123',
+        role: 'Frontend Architect',
+        rememberMe: true
+      },
+      {
+        email: [
+          (v) => validateRequired(v, 'Email ünvanı'),
+          (v) => validateEmail(v)
+        ],
+        password: [
+          (v) => validateRequired(v, 'Şifrə'),
+          (v) => validateMinLength(v, 6, 'Şifrə')
+        ]
+      }
+    );
+
     const showPassword = ref(false);
-    const isSubmitting = ref(false);
-    const formErrors = ref({});
     const globalError = ref('');
 
     const redirectPath = computed(() => route.query.redirect || '/dashboard');
@@ -44,36 +72,18 @@ export const LoginView = {
     ];
 
     const applyPreset = (acc) => {
-      email.value = acc.email;
-      password.value = acc.password;
-      role.value = acc.role;
-      formErrors.value = {};
+      setField('email', acc.email);
+      setField('password', acc.password);
+      setField('role', acc.role);
+      formErrors.email = '';
+      formErrors.password = '';
       globalError.value = '';
-    };
-
-    const validateForm = () => {
-      const errors = {};
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-      if (!email.value || !email.value.trim()) {
-        errors.email = 'Email ünvanı tələb olunur.';
-      } else if (!emailRegex.test(email.value.trim())) {
-        errors.email = 'Düzgün email formatı daxil edin (məs: user@flin.io).';
-      }
-
-      if (!password.value || !password.value.trim()) {
-        errors.password = 'Şifrə tələb olunur.';
-      } else if (password.value.length < 6) {
-        errors.password = 'Şifrə ən azı 6 simvoldan ibarət olmalıdır.';
-      }
-
-      formErrors.value = errors;
-      return Object.keys(errors).length === 0;
     };
 
     const handleLogin = () => {
       globalError.value = '';
-      if (!validateForm()) {
+      const valid = validateAll();
+      if (!valid) {
         return;
       }
 
@@ -83,10 +93,10 @@ export const LoginView = {
       setTimeout(() => {
         try {
           const res = authStore.login(
-            email.value.trim(),
-            password.value,
-            role.value,
-            rememberMe.value
+            fields.email.trim(),
+            fields.password,
+            fields.role,
+            fields.rememberMe
           );
 
           isSubmitting.value = false;
@@ -106,13 +116,12 @@ export const LoginView = {
     };
 
     return {
-      email,
-      password,
-      role,
-      rememberMe,
-      showPassword,
-      isSubmitting,
+      fields,
       formErrors,
+      isSubmitting,
+      touchField,
+      setField,
+      showPassword,
       globalError,
       redirectPath,
       isRedirectedFromProtected,
@@ -211,7 +220,9 @@ export const LoginView = {
                 <label class="auth-form__label" for="f-email">Email Ünvanı</label>
                 <input 
                   id="f-email" 
-                  v-model="email" 
+                  :value="fields.email"
+                  @input="setField('email', $event.target.value)"
+                  @blur="touchField('email')"
                   type="email" 
                   class="auth-form__input" 
                   placeholder="ad@shirket.com"
@@ -231,7 +242,9 @@ export const LoginView = {
                 <div class="auth-form__input-wrapper">
                   <input 
                     id="f-pass" 
-                    v-model="password" 
+                    :value="fields.password"
+                    @input="setField('password', $event.target.value)"
+                    @blur="touchField('password')"
                     :type="showPassword ? 'text' : 'password'" 
                     class="auth-form__input" 
                     placeholder="••••••••"
@@ -244,7 +257,12 @@ export const LoginView = {
               <!-- Role Selector -->
               <div class="auth-form__group">
                 <label class="auth-form__label" for="f-role">Sistem Rolu</label>
-                <select id="f-role" v-model="role" class="auth-form__select">
+                <select 
+                  id="f-role" 
+                  :value="fields.role"
+                  @change="setField('role', $event.target.value)"
+                  class="auth-form__select"
+                >
                   <option value="Frontend Architect">Frontend Architect</option>
                   <option value="Senior Vue Developer">Senior Vue Developer</option>
                   <option value="Product Manager">Product Manager</option>
@@ -255,7 +273,11 @@ export const LoginView = {
               <!-- Remember Me -->
               <div class="auth-form__checkbox-row">
                 <label class="custom-checkbox">
-                  <input type="checkbox" v-model="rememberMe" />
+                  <input 
+                    type="checkbox" 
+                    :checked="fields.rememberMe"
+                    @change="setField('rememberMe', $event.target.checked)"
+                  />
                   <span class="custom-checkbox__box"></span>
                   <span class="custom-checkbox__label">Məni xatırla (Uzadılmış 7 günlük sessiya)</span>
                 </label>
@@ -265,10 +287,10 @@ export const LoginView = {
               <button 
                 type="submit" 
                 class="btn btn--solid btn--block btn--md auth-form__submit" 
-                :disabled="isSubmitting"
+                :disabled="isSubmitting.value"
               >
-                <span v-if="isSubmitting" class="spinner"></span>
-                <span>{{ isSubmitting ? 'Doğrulanır...' : 'Daxil Ol →' }}</span>
+                <span v-if="isSubmitting.value" class="spinner"></span>
+                <span>{{ isSubmitting.value ? 'Doğrulanır...' : 'Daxil Ol →' }}</span>
               </button>
             </form>
           </div>
