@@ -360,8 +360,7 @@ code {
   padding: 60px 0 80px;
 }
 
-/* Left column */
-.hero__left {}
+
 
 .eyebrow-tag {
   display: inline-block;
@@ -518,7 +517,7 @@ code {
   letter-spacing: 0.06em;
 }
 
-.auth-gate-toggle {}
+
 
 .route-table {
   border: 1px solid var(--col-border);
@@ -688,7 +687,7 @@ code {
   margin: 0 auto;
 }
 
-.login-split__left {}
+
 
 .login-brand {
   display: flex;
@@ -1490,8 +1489,7 @@ code {
   padding: 36px;
 }
 
-.profile-card__col {}
-.profile-card__col--data {}
+
 
 .profile-card__avatar {
   width: 72px;
