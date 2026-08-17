@@ -38,6 +38,15 @@ export const StateInspector = {
       taskSlice.toggleForceApiFailure();
     };
 
+    /**
+     * Checkpoint 6: Simulate unhandled runtime exception for Error Boundary testing
+     */
+    const simulateCrash = () => {
+      setTimeout(() => {
+        throw new Error('Simulated Crash from StateInspector: Null pointer / render exception (Quality Check 6 Test)');
+      }, 50);
+    };
+
     const clearHistory = () => {
       globalStore.clearActionHistory();
     };
@@ -54,6 +63,7 @@ export const StateInspector = {
       handleCustomDispatch,
       runQuickAction,
       toggleFailureMode,
+      simulateCrash,
       clearHistory
     };
   },
@@ -78,7 +88,7 @@ export const StateInspector = {
 
         <!-- Quick actions toolbar -->
         <div class="state-inspector__quick-actions">
-          <span class="state-inspector__quick-label">Sürətli Dispatch (Optimistic CRUD):</span>
+          <span class="state-inspector__quick-label">Sürətli Test və Diaqnostika Düymələri:</span>
           <div class="state-inspector__quick-btns">
             <button 
               class="demo-btn" 
@@ -107,10 +117,11 @@ export const StateInspector = {
               {{ isForcingFailure ? '🔴 Xəta Aktiv (Rollback)' : '⚡ 500 Rollback Testi' }}
             </button>
             <button 
-              class="demo-btn" 
-              @click="runQuickAction('tasks/testStaleClosure')"
+              class="demo-btn demo-btn--crash" 
+              @click="simulateCrash"
+              title="Checkpoint 6: Error Boundary və Global Error Handler testini işə salır"
             >
-              Stale Closure Testi
+              💥 Simulate Crash (CP6)
             </button>
           </div>
         </div>

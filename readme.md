@@ -1,253 +1,159 @@
 # Flin · Vue 3 Frontend Tətbiqi (Auth + Global State)
 
-Bu layihə **Vue 3**, **Vue Router 4**, **Centralized Global State (Context / Redux Pattern)**, **JWT Sessiya İdarəetməsi** və **BEM (Block Element Modifier)** metodologiyası ilə hazırlanmış, yüksək keyfiyyətli Developer-First frontend tətbiqidir.
+Bu layihə **Vue 3**, **Vue Router 4**, **Centralized Global State (Context / Redux Pattern)**, **Optimistic UI + Mock CRUD**, **Error Boundary**, **JWT Sessiya İdarəetməsi**, **Feature-Based Kod Arxitekturası** və **BEM (Block Element Modifier)** metodologiyası ilə hazırlanmış, yüksək keyfiyyətli Developer-First frontend tətbiqidir.
 
 ---
 
-## 📌 Checkpoint 1: Navigating with Router & Route Guards (15 Bal)
+## 📊 Checkpoint İcrası və Bal Bölgüsü (100 / 100 Bal)
 
-Bu mərhələdə (`guide.md:L3`, `assestments.md`, `quality__checks.md` sənədlərinə uyğun olaraq) layihənin marşrutlaşdırma infrastrukturu və qorunan səhifələrə icazəsiz girişlərin qarşısını alan qlobal keşişlər (guards) qurulmuşdur:
-
-### 1. Marşrutlaşdırma və Route Kateqoriyaları
-* **İctimai Marşrutlar (Public Routes)**:
-  * `/` — Əsas ana səhifə, interaktiv marşrut xəritəsi və sistem statusu.
-  * `/catalog` — Məhsul və xidmətlər kataloqu (istənilən istifadəçi baxa bilər).
-* **Qorunan Marşrutlar (Protected Routes - `meta: { requiresAuth: true }`)**:
-  * `/dashboard` — İdarəetmə paneli və reaktiv statistik göstəricilər.
-  * `/tasks` — Qlobal tapşırıqlar lövhəsi və iş axını.
-  * `/cart` — Səbət, endirim tətbiqi və faktura checkout.
-  * `/profile` — İstifadəçi hesabı və sessiya məlumatları.
-* **Qonaq Marşrutu (Guest Route - `meta: { requiresGuest: true }`)**:
-  * `/login` — Giriş portalı. Daxil olmuş istifadəçilər bu səhifəyə daxil olduqda avtomatik olaraq `/dashboard`-a yönləndirilir.
-* **404 Xəta Marşrutu (Catch-All)**:
-  * `/:pathMatch(.*)*` — Mövcud olmayan bütün URL-lər xüsusi dizayn edilmiş `/404` (`NotFoundView`) səhifəsinə yönləndirilir.
-
-### 2. Vue Router Navigation Guards (`beforeEach`) Mexanizmi
-1. **İcazəsiz Girişlərin Qarşısının Alınması**: Qorunan səhifəyə icazəsiz keçid zamanı keçid bloklanır, `"Giriş Tələb Olunur"` xəbərdarlığı çıxır və istifadəçi `/login?redirect=${to.fullPath}` ünvanına yönləndirilir.
-2. **Girişdən Sonra Qayıdış**: Uğurlu girişdən sonra istifadəçi avtomatik olaraq ilk cəhd etdiyi `redirect` səhifəsinə qaytarılır.
-3. **Dinamik Səhifə Başlıqları**: SEO və UX üçün `document.title` hər səhifə dəyişdikdə dinamik yenilənir.
+| Checkpoint | Mövzu | Bal | Status | Branch |
+| :--- | :--- | :--- | :--- | :--- |
+| **Checkpoint 1** | Navigating with Vue Router & Navigation Guards | 15 Bal | ✅ Tamamlandı | `checkpoint-1` |
+| **Checkpoint 2** | Authentication Flow & Session Protection (JWT) | 20 Bal | ✅ Tamamlandı | `checkpoint-2` |
+| **Checkpoint 3** | Centralized Global State (Context / Redux Pattern) | 20 Bal | ✅ Tamamlandı | `checkpoint-3` |
+| **Checkpoint 4** | Validated Forms (Custom `useForm` & `validators.js`) | 15 Bal | ✅ Tamamlandı | `checkpoint-4` |
+| **Checkpoint 5** | Mock CRUD against API with Optimistic UI & Rollback | 15 Bal | ✅ Tamamlandı | `checkpoint-5` |
+| **Checkpoint 6** | Error Boundary & Global Error Handling (App Crash Isolation) | 10 Bal | ✅ Tamamlandı | `checkpoint-6` |
+| **Checkpoint 7** | Feature-Based Folder Structure & Code Organization | 5 Bal | ✅ Tamamlandı | `checkpoint-7` |
 
 ---
 
-## 📌 Checkpoint 2: Authentication Flow & Session Protection (20 Bal)
+## 📌 Checkpoint 7: Feature-Based Code Structure & Architecture (5 Bal)
 
-Bu mərhələdə (`guide.md:L4`) təhlükəsiz və sənaye standartlarına uyğun autentifikasiya axını reallaşdırılmışdır:
+Layihənin `src/` strukturu ənənəvi type-based təşkilatdan (`views/`, `components/`, `state/`, `services/`, `utils/`) genişlənə bilən, modulyar **Feature-Based Architecture** standartına keçirilmişdir:
 
-### 1. Validasiyalı Giriş Forması (`src/views/LoginView.js`)
-* **Real-vaxt Sahə Doğrulaması**: Email regex yoxlanışı, minimum 6 simvollu şifrə tələbi və sahəaltı xəta mesajları.
-* **UX Xüsusiyyətləri**: Şifrəni göstər/gizlət düyməsi, asinxron yüklənmə spineri və 1 kliklə test preseti (**Sarah - Architect**, **Alex - Lead Dev**, **Elena - PM**).
-* **"Məni xatırla" (Remember Me)**: 7 günlük uzadılmış JWT sessiyası və ya 1 saatlıq standart sessiya seçimi.
-
-### 2. Standart 3 Hissəli JWT İdarəetməsi (`src/utils/token.js`)
-* **Header**, **Payload Claims** (`sub`, `email`, `role`, `permissions`, `iat`, `exp`, `jti`) və **Signature** Base64Url formatlı JWT tokenlər.
-* Səhifə yeniləndikdə (`F5` / Refresh) `localStorage`-dən (`flin_auth_token`) sessiyanın itkisiz bərpası.
-
-### 3. Quality Checks Tələblərinin İcrası:
-* **Quality Check 1 (401 Interceptor Simulyasiyası)**: `apiClient.js` daxilində 401 xətası aşkar edildikdə sessiyanı sonlandırır və qəzasız/dövrəsiz `/login?redirect=...&reason=401_expired` səhifəsinə yönləndirir.
-* **Quality Check 3 (Təmiz Çıxış və Back Button Qoruması)**: Çıxış zamanı bütün tokenlər və `localStorage` sıfırlanır, geri düyməsi ilə qorunan səhifələrə daxil olmağa imkan verilmir.
+```text
+src/
+├── features/                  # Funksional modul və bölmələr (Feature Slices)
+│   ├── auth/                  # Autentifikasiya, login portalı və token idarəetməsi
+│   │   ├── LoginView.js       # Validasiyalı giriş forması və demo hesablar
+│   │   └── authStore.js       # Reaktiv Auth Store və JWT token TTL sayğacı
+│   ├── cart/                  # Səbət, endirim və checkout modulu
+│   │   ├── CartView.js        # Səbət görünüşü və faktura checkout
+│   │   └── cartSlice.js       # Reaktiv səbət vəziyyəti, vergi və kupon hesablamaları
+│   ├── tasks/                 # Tapşırıqlar lövhəsi və Optimistic CRUD modulu
+│   │   ├── TasksView.js       # Tapşırıqlar lövhəsi, form və API simulyasiya paneli
+│   │   └── taskSlice.js       # Tapşırıqların CRUD əməliyyatları və Rollback idarəetməsi
+│   ├── catalog/               # İctimai məhsul və xidmətlər kataloqu
+│   │   └── CatalogView.js     # Kataloq görünüşü və birbaşa səbətə əlavə
+│   ├── profile/               # İstifadəçi profili modulu
+│   │   ├── ProfileView.js     # Profil tənzimləmələri və JWT məlumatları
+│   │   └── profileSlice.js    # Profil sahələri və localStorage sinxronizasiyası
+│   └── dashboard/             # İdarəetmə paneli və canlı statistikalar
+│       └── DashboardView.js   # Əsas qorunan dashboard və lokal Error Boundary demo
+├── shared/                    # Bütün tətbiq üzrə paylaşılan komponentlər və xidmətlər
+│   ├── components/            # Qlobal UI komponentləri
+│   │   ├── AppHeader.js       # Başlıq paneli, dinamik səbət və tapşırıq sayğacları
+│   │   ├── AppFooter.js       # BEM footer komponenti
+│   │   ├── RouteBanner.js     # Keçid bildirişləri banneri
+│   │   ├── ToastContainer.js  # Qlobal animasiyalı Toast bildiriş sistemi
+│   │   ├── StateInspector.js  # Redux DevTools State & Action Inspector
+│   │   ├── SessionInspector.js# Canlı JWT və Sessiya test konsolu
+│   │   └── ErrorBoundary.js   # Checkpoint 6: onErrorCaptured ilə xəta təcridi komponenti
+│   ├── services/
+│   │   └── apiClient.js       # Mock API Client, 401 Interceptor & CRUD metodları
+│   ├── utils/
+│   │   ├── token.js           # JWT Base64Url kodlaşdırma və vaxt utilitləri
+│   │   └── validators.js      # Təkrar istifadə edilə bilən form validasiya qaydaları
+│   ├── composables/
+│   │   └── useForm.js         # Checkpoint 4: React Hook Form tipli Vue composable
+│   ├── views/                 # Xüsusi təkrar istifadə edilən ümumi səhifələr
+│   │   ├── HomeView.js        # İctimai ana səhifə və route guard xəritəsi
+│   │   └── NotFoundView.js    # 404 Tapılmayan səhifə marşrutu
+│   └── state/                 # Mərkəzi Redux pattern dispatcher
+│       ├── index.js           # Mərkəzi Store & Action History Logger
+│       └── slices/
+│           └── toastSlice.js  # Qlobal Toast Slice
+├── router/
+│   └── index.js               # Vue Router 4 marşrutları və Navigation Guards
+└── main.js                    # Tətbiqin bootstrap, qlobal ErrorHandler və plugin quraşdırılması
+```
 
 ---
 
-## 📌 Checkpoint 3: Global State Management (Context / Redux Pattern) (20 Bal)
+## 📌 Checkpoint 5: CRUD Operations against Mock API with Optimistic UI (15 Bal)
 
-Bu mərhələdə (`guide.md:L5`, `assestments.md`, `quality__checks.md` sənədlərinə uyğun olaraq) layihə üçün mərkəzləşdirilmiş **Global State Store & Redux / Reducer Dispatcher** arxitekturası qurulmuşdur:
+Bu mərhələdə (`guide.md:L7`) sənaye standartı olan **Optimistic UI with Rollback Pattern** və asinxron **Mock API CRUD** arxitekturası qurulmuşdur:
 
-### 1. Mərkəzləşdirilmiş Qlobal Store Arxitekturası (`src/state/index.js`)
-* **Mərkəzi Dispatcher**: `store.dispatch({ type, payload })` vasitəsilə vahid action yönləndirilməsi və reducer emalı.
-* **Middleware Logging & State Snapshot**: Hər dispatch olunan action üçün əvvəlki/sonrakı vəziyyət qeydiyyatı və tarixçə axını (`actionHistory`).
-* **Slices Sistemi**:
-  * **Auth Slice (`authStore.js`)**: İstifadəçi autentifikasiyası, JWT token, sessiya TTL və icazələr.
-  * **Cart Slice (`src/state/slices/cartSlice.js`)**: Səbət məhsulları, kəmiyyət tənzimləməsi (`+/-`), promo kod tətbiqi (`FLIN2026` 15%, `DEVJOINT50` 50%), 18% ƏDV hesablanması və `localStorage` sinxronizasiyası.
-  * **Tasks Slice (`src/state/slices/taskSlice.js`)**: Tapşırıqların yaradılması, status toggle, silinmə, çoxlu tamamlama (bulk complete), status/axtarış/prioritet filtrləri və statistika hesablaması.
-  * **Toast Slice (`src/state/slices/toastSlice.js`)**: Qlobal floating bildiriş sistemi (success, info, warning, danger).
+### 1. Mock API Client (`src/shared/services/apiClient.js`)
+* **Real CRUD Endpointləri**:
+  * `createTask(taskData)` — Asinxron `POST /api/tasks` (250–400ms gecikmə)
+  * `updateTask(id, patch)` — Asinxron `PATCH /api/tasks/:id` (250–400ms gecikmə)
+  * `deleteTask(id)` — Asinxron `DELETE /api/tasks/:id` (250–400ms gecikmə)
+  * `addToCart(product)`, `removeFromCart(id)`, `updateCartQty(id, qty)` — Səbət CRUD əməliyyatları
+* **Təsadüfi və ya Məcburi Xəta Simulyatoru (`forceFailure`)**: Qiymətləndiricinin rollback axınını 1 kliklə canlı test edə bilməsi üçün API-yə xəta atma rejimi əlavə edilib.
 
----
-
-### 2. Quality Check 2: Stale Closure vs Fresh Reducer Dispatch Diaqnostikası
-* **Problem**: React/Vue-da callback və asinxron funksiyalarda closure daxilində köhnə (stale) dəyərin yadda qalması klassik frontend problemidir.
-* **Həll və Test**: `/tasks` səhifəsində və DevTools-da xüsusi **"Stale Closure vs Fresh Reducer Dispatch"** test modulu yaradılmışdır. Modul asinxron gecikmə zamanı köhnə closure dəyəri ilə Reducer store-un təmin etdiyi təzə vəziyyəti canlı müqayisə edərək testin keçdiyini sübut edir.
-
----
-
-### 3. Redux DevTools Tipli State Inspector (`src/components/StateInspector.js`)
-* Ekranın aşağı sağ küncündə yerləşən interaktiv DevTools paneli:
-  * **State Tree**: Bütün tətbiqin qlobal JSON vəziyyət ağacı (Auth, Cart, Tasks, Toasts).
-  * **Action Log**: Real-vaxt rejimində axan action axını, zaman damğası və payload məlumatları.
-  * **Manual Dispatcher**: İstənilən action-ı JSON formatında əl ilə göndərmək imkanı.
-  * **Sürətli Test Düymələri**: Bir kliklə səbətə məhsul atmaq, tapşırıq yaratmaq və ya promo kod yoxlamaq.
+### 2. Optimistic UI & Rollback Axını (`src/features/tasks/taskSlice.js` & `cartSlice.js`)
+1. **Dərhal UI Yenilənməsi (Optimistic Update)**: İstifadəçi düyməyə basdığı anda UI dərhal yenilənir (spinerdə gözlətmədən) və tapşırığa müvəqqəti ID + `_syncStatus: 'syncing'` statusu verilir.
+2. **Arxa Fonda API Sorğusu**: Asinxron olaraq `apiClient` sorğusu icra olunur.
+3. **Uğurlu Təsdiqləmə (Confirmed)**: Server 200/201 OK qaytardıqda tapşırıq server ID-si ilə möhkəmləndirilir və `_syncStatus: 'synced'` qeyd olunur.
+4. **Xətada Geri Qaytarılma (Rollback)**: Server 500 Network Error verdikdə:
+   * Yaradılmış optimistik element dərhal state-dən silinir (və ya silinən element öz indeksinə bərpa edilir).
+   * İstifadəçiyə qırmızı təhlükə Toast bildirişi göstərilir.
+   * Rollback hadisəsi loqlanır və Redux DevTools-da qeyd edilir.
 
 ---
 
-### 4. Qlobal Toast Bildiriş Sistemi (`src/components/ToastContainer.js`)
-* Tətbiqin istənilən yerindən dispatch olunan hərəkətlərə (məs: "Məhsul səbətə əlavə edildi", "Promo kod tətbiq edildi", "Tapşırıq silindi") uyğun olaraq sağ yuxarı küncdə animasiyalı və avtomatik itən toast-lar göstərilir.
+## 📌 Checkpoint 6: Error Boundary & Global Error Handling (10 Bal)
+
+Bu mərhələdə (`guide.md:L8`) tətbiqin istənilən daxili xəta səbəbindən bütünlükdə çökməsinin (White Screen of Death) qarşısını alan ikipilləli müdafiə sistemi qurulmuşdur:
+
+### 1. Qlobal Vue Xəta Tutucusu (`src/main.js`)
+```javascript
+app.config.errorHandler = (err, instance, info) => {
+  console.error('[Global Vue ErrorHandler Caught]:', err, info);
+  toastSlice.addToast(
+    `🚨 [Qlobal Error Handler]: ${err?.message || 'Gözlənilməz xəta baş verdi.'} (Tətbiq çökmədi)`,
+    'danger',
+    6000
+  );
+};
+```
+
+### 2. Error Boundary Komponenti (`src/shared/components/ErrorBoundary.js`)
+* Vue 3-ün **`onErrorCaptured(err, instance, info)`** hook-undan istifadə edir.
+* Alt komponentlərdə baş verən render, hesablama və ya lifecycle xətalarını tutur və xətanın yuxarı şaxələnməsinin qarşısını alır (`return false`).
+* **Zərif Fallback UI Kartı**: Komponent sıradan çıxsa belə, ətrafındakı Header, Naviqasiya və Footer 100% işlək qalır. Fallback kartında:
+  * Xətanın baş verdiyi bölmənin adı
+  * Xəta mesajı və zaman damğası
+  * Genişlənən Stack Trace
+  * **"🔄 Komponenti Yenidən Başlat (Reset Error)"** düyməsi yerləşir.
+
+### 3. Canlı Test Düymələri ("Simulate Crash"):
+* **StateInspector (DevTools)**: Quick Actions panelində **"💥 Simulate Crash (CP6)"** düyməsi.
+* **DashboardView**: **"💥 Bu Komponenti Çökdür (Simulate Component Crash)"** düyməsi vasitəsilə lokal ErrorBoundary təcridinin sınağı.
+
+---
+
+## 📌 Checkpoint 4: Validated Forms — Manual Validation (15 Bal)
+
+* **`useForm` Composable (`src/shared/composables/useForm.js`)**: Touch-based sahə yoxlanışı (`@blur`), `isDirty` vəziyyəti, `isValid`, `isSubmitting` və xətalı sahələrdə `@keyframes formShake` animasiyası.
+* **`validators.js` (`src/shared/utils/validators.js`)**: `validateRequired`, `validateEmail`, `validateMinLength`, `validateMaxLength`, `validateUrl`, `validateFutureDate`, `validateNoHtml`.
+* **3 Validasiyalı Forma**:
+  1. **Profil Düzəliş Forması** (`/profile`): Ad, sistem rolu, bio (canlı 200 simvol sayğacı), veb sayt URL.
+  2. **Genişləndirilmiş Tapşırıq Forması** (`/tasks`): Başlıq (min 5 simvol), prioritet, kateqoriya, son tarix.
+  3. **Dəstək & Rəy Forması** (`/dashboard`): Mövzu (min 5), kateqoriya, üstünlük, mesaj (min 20, canlı 500 sayğac).
+
+---
+
+## 📌 Checkpoint 1, 2 & 3: Router Guards, Auth & Global State (55 Bal)
+
+* **Checkpoint 1 (15 Bal)**: Public (`/`, `/catalog`), Protected (`/dashboard`, `/tasks`, `/cart`, `/profile`), Guest (`/login`), 404 Catch-all (`/:pathMatch(.*)*`). `beforeEach` guard ilə icazəsiz girişlərin `/login?redirect=...` yönləndirilməsi.
+* **Checkpoint 2 (20 Bal)**: Base64Url 3 hissəli JWT (Header, Payload Claims, Signature). `localStorage` üzərindən `F5` refresh persistence. 401 Interceptor ilə sessiya vaxtı bitdikdə dövrəsiz təhlükəsiz çıxış.
+* **Checkpoint 3 (20 Bal)**: Mərkəzləşdirilmiş Redux pattern store (`globalStore.dispatch`), Action History logger, Cart/Tasks/Toast slices və Stale Closure vs Fresh Reducer Diaqnostik laboratoriyası.
 
 ---
 
 ## 💎 BEM (Block Element Modifier) CSS Naming Sistemi
 
-Layihədə bütün vizual elementlər və CSS dərhal oxunaqlı və modulyar olan **BEM** standartı ilə yazılmışdır:
-
-| Tip | Nümunə | Təsviri |
-| :--- | :--- | :--- |
-| **Bloklar (Block)** | `.app-header`, `.state-inspector`, `.cart-card`, `.task-item`, `.toast-container` | Müstəqil funksional komponent vahidləri |
-| **Elementlər (Element)** | `.cart-card__name`, `.task-item__title`, `.state-inspector__tab`, `.toast-item__msg` | Blokun daxilindəki tərkib hissələri (`__` ilə ayrılır) |
-| **Modifikatorlar (Modifier)** | `.btn--solid`, `.task-tab--active`, `.toast-item--success`, `.badge--protected` | Vəziyyət və ya görünüş dəyişiklikləri (`--` ilə ayrılır) |
+Bütün dizayn sistemi xalis CSS və BEM metodologiyası ilə yazılmışdır (heç bir xarici CSS framework-ü istifadə edilməmişdir):
+* **Bloklar**: `.app-header`, `.state-inspector`, `.cart-card`, `.task-item`, `.error-fallback-card`, `.api-sim-card`
+* **Elementlər**: `.error-fallback-card__title`, `.api-sim-card__header`, `.task-item__title`, `.cart-card__name`
+* **Modifikatorlar**: `.api-sim-card--failing`, `.task-item--syncing`, `.badge--pulse`, `.demo-btn--crash`, `.btn--solid`
 
 ---
 
-## 📂 Qovluq və Fayl Strukturu
-
-```text
-├── index.html                 # Əsas HTML şablonu (Outfit & JetBrains Mono şriftləri)
-├── package.json               # Vue 3, Vue Router 4 və Vite konfiqurasiyası
-├── vite.config.js             # Vite dev server konfiqurasiyası
-├── styles.css                 # BEM metodologiyası ilə yazılmış tam CSS dizayn sistemi
-├── src/
-│   ├── main.js                # Vue tətbiqinin bootstrap və router quraşdırılması
-│   ├── router/
-│   │   └── index.js           # Vue Router marşrutları və Navigation Guards (beforeEach)
-│   ├── state/
-│   │   ├── index.js           # Mərkəzləşdirilmiş Global Store & Redux Dispatcher
-│   │   ├── authStore.js       # Reaktiv Auth Store və JWT idarəetməsi
-│   │   └── slices/
-│   │       ├── cartSlice.js   # Shopping Cart Slice (qiymət, vergi, kupon, persistence)
-│   │       ├── taskSlice.js   # Task Manager Slice (CRUD, filtrlər, Stale Closure testi)
-│   │       ├── toastSlice.js  # Global Toast Notifications Slice
-│   │       └── profileSlice.js# Profil State Slice (displayName, bio, rol, website) [CP4]
-│   ├── services/
-│   │   └── apiClient.js       # Mock API Client & 401 Response Interceptor
-│   ├── utils/
-│   │   ├── token.js           # JWT Kodlaşdırma, Dekodlaşdırma və Vaxt hesablama utilitləri
-│   │   └── validators.js      # Reusable Validation Funksiyaları (required, email, URL...) [CP4]
-│   ├── composables/
-│   │   └── useForm.js         # Manual Form State & Validation Composable [CP4]
-│   ├── components/
-│   │   ├── AppHeader.js       # Başlıq paneli, dinamik səbət və tapşırıq sayğacları
-│   │   ├── ToastContainer.js  # Qlobal toast bildiriş konteyneri
-│   │   ├── StateInspector.js  # Redux DevTools State & Action Inspector
-│   │   ├── SessionInspector.js# Canlı JWT və Sessiya test konsolu
-│   │   ├── RouteBanner.js     # Keçid bildiriş banneri
-│   │   └── AppFooter.js       # Footer komponenti
-│   └── views/
-│       ├── HomeView.js        # İctimai ana səhifə və route guard xəritəsi
-│       ├── CatalogView.js     # İctimai məhsul kataloqu və səbətə birbaşa əlavə (/catalog)
-│       ├── LoginView.js       # Validasiyalı giriş və demo hesablar (/login)
-│       ├── DashboardView.js   # Qorunan idarəetmə paneli və canlı statistika (/dashboard)
-│       ├── TasksView.js       # Qorunan tapşırıqlar lövhəsi və Stale Closure Lab (/tasks)
-│       ├── CartView.js        # Qorunan səbət, promo kod və faktura checkout (/cart)
-│       ├── ProfileView.js     # Qorunan profil və JWT parametrləri (/profile)
-│       └── NotFoundView.js    # 404 Tapılmayan səhifə marşrutu (/404)
-├── readme.md                  # Layihə sənədləşməsi
-├── guide.md                   # Ümumi tələblər bələdçisi
-├── assestments.md             # Qiymətləndirmə meyarları
-└── quality__checks.md         # Keyfiyyət yoxlama meyarları
-```
-
----
-
-## ✅ Checkpoint 4: Validated Forms — Manual Validation (15 Bal)
-
-Bu mərhələdə (`guide.md:L6`) tətbiqin üç ayrı görünüşünə **tam validasiyalı forma sistemi** əlavə edilmişdir. Həll **React Hook Form kitabxanasından asılı olmadan**, xalis Vue 3 Composition API ilə manual olaraq qurulmuşdur.
-
-### 1. `useForm` Composable (`src/composables/useForm.js`)
-
-Bütün formaların bel sütunu olan, **React Hook Form-un Vue 3 ekvivalenti** custom composable:
-
-```js
-const {
-  fields,       // reaktiv form dəyərləri — :value + @input ilə bağlanır
-  errors,       // sahə üzrə xəta mesajları
-  touched,      // istifadəçi hansı sahəni tərk edib?
-  isDirty,      // computed — hər hansı sahə ilkin dəyərdən fərqlənirmi?
-  isValid,      // computed — bütün xətalar boşdurmu?
-  isSubmitting, // reactive { value: bool } — yükləmə vəziyyəti
-  setField,     // (name, val) → dəyəri yenil, əgər touched isə validate et
-  touchField,   // (name) → @blur-da çağır → sahəni validate et
-  validateAll,  // () → submit zamanı bütün sahələri yoxla → bool qaytarır
-  resetForm,    // () → formu ilkin vəziyyətə qaytar
-  getValues,    // () → sahələrin sadə obyekt kopiyası
-} = useForm(initialValues, rules)
-```
-
-**Davranış mexanizmi:**
-* **`@blur`** → yalnız istifadəçinin tərk etdiyi sahə validate edilir (touch-based)
-* **Submit** → `validateAll()` bütün sahələri eyni anda yoxlayır, hamısını "touched" işarələyir
-* **`isDirty`** → "Yadda saxlanmamış dəyişiklik" badge-i üçün istifadə edilir
-* Xətalı sahələrdə **shake animasiyası** (`@keyframes formShake`) tətbiq edilir
-
----
-
-### 2. `validators.js` Utiliti (`src/utils/validators.js`)
-
-Bütün formalarda istifadə olunan reusable, xalis funksiya validator modulu:
-
-| Funksiya | Yoxlama Meyarı |
-| :--- | :--- |
-| `validateRequired(v, label)` | Boş / boşluqdan ibarət sahəni rədd edir |
-| `validateEmail(v)` | RFC-uyğun email formatı (`user@domain.tld`) |
-| `validateMinLength(v, n, label)` | Minimum `n` simvol |
-| `validateMaxLength(v, n, label)` | Maksimum `n` simvol |
-| `validateUrl(v)` | `http://` və ya `https://` ilə başlayan URL |
-| `validateFutureDate(v)` | ISO tarix — keçmiş tarix rədd edilir |
-| `validateNoHtml(v)` | HTML teqi olan məzmunu rədd edir |
-| `runValidators(v, chain)` | Validator zənciri icra edir, ilk xətanı qaytarır |
-
-Hər validator `{ valid: boolean, error: string }` qaytarır.
-
----
-
-### 3. Forma #1 — Profil Düzəliş Forması (`/profile`)
-
-**Sahələr:**
-* `displayName` \* — required, min 2, max 40 simvol
-* `role` \* — required, dropdown (5 rol seçimi)
-* `website` — isteğe bağlı, `https://` URL format yoxlaması
-* `bio` — isteğe bağlı, max 200 simvol + canlı simvol sayğacı
-
-**Xüsusiyyətlər:** `isDirty` badge ("Yadda saxlanmamış dəyişiklik"), son yeniləmə zaman damğası, "Ləğv Et" düyməsi formu sıfırlayır.
-
-**Dispatch:** `globalStore.dispatch({ type: 'profile/update', payload })` → `profileSlice.updateProfile()` → `localStorage`-ə yazılır.
-
----
-
-### 4. Forma #2 — Genişləndirilmiş Tapşırıq Yaratma Forması (`/tasks`)
-
-**Sahələr:**
-* `title` \* — required, min **5**, max 120 simvol + canlı simvol sayğacı
-* `description` — isteğe bağlı, max 300 simvol, tapşırıq listdə açılan panel ilə göstərilir
-* `priority` \* — required, select (High/Medium/Low)
-* `category` \* — required, select (Engineering/Architecture/Security/DevTools/Forms/API)
-* `dueDate` — isteğe bağlı, date input, keçmiş tarix rədd edilir
-
-**Tapşırıq listdə yeniliklər:** Hər tapşırıqda `description` varsa "▼ Təsvir" düyməsi görünür; klik ilə açılır/gizlənir. Son tarix (`dueDate`) tapşırıq başlığının altında göstərilir.
-
-**Dispatch:** `globalStore.dispatch({ type: 'tasks/addTask', payload })` → `taskSlice.addTask()`.
-
----
-
-### 5. Forma #3 — Dəstək & Rəy Forması (`/dashboard`)
-
-**Sahələr:**
-* `subject` \* — required, min 5, max 100 simvol
-* `category` \* — required, select (Bug Bildirişi / Xüsusiyyət Tələbi / Sual / Ümumi Rəy)
-* `priority` \* — required, select (Aşağı / Normal / Yüksək / Kritik)
-* `email` — isteğe bağlı, email format yoxlaması (cavab üçün)
-* `message` \* — required, min **20**, max 500 simvol + canlı sayğac (< 80 qalırsa sarı rəngə keçir)
-
-**Submit sonrası:** Toast bildirişi bilet nömrəsi ilə göstərilir (`FLIN-XXXXX`), forma avtomatik sıfırlanır.
-
----
-
-### 6. Yeni State Slice — `profileSlice` (`src/state/slices/profileSlice.js`)
-
-* `displayName`, `bio`, `role`, `website` sahələrini idarə edir
-* Auth sessiyanından bootstrap edir (ilk yükləmədə `flin_user_data` əsasında doldurulur)
-* `localStorage` (`flin_profile_data`) ilə tam sinxronizasiya
-* `globalStore`-a `profile` sahəsi kimi qoşulub — **Redux DevTools StateInspector**-da görünür
-
----
-
-## 🚀 Layihəni İşə Salma və Yoxlama Qaydası
+## 🚀 Layihəni İşə Salma Qaydası
 
 ### 1. Asılılıqları Quraşdırın:
 ```bash
@@ -258,7 +164,7 @@ npm.cmd install
 ```bash
 npm.cmd run dev
 ```
-Tətbiq avtomatik olaraq `http://localhost:3000/` ünvanında açılacaqdır.
+Tətbiq `http://localhost:3000/` ünvanında açılacaqdır.
 
 ### 3. Production Build Testi:
 ```bash
@@ -267,17 +173,24 @@ npm.cmd run build
 
 ---
 
-## 🧪 Qiymətləndirmə üçün Canlı Test Ssenariləri
+## 🧪 Qiymətləndirmə üçün Canlı Test Ssenariləri (Addım-Addım)
 
-### Checkpoint 1 & 2 Testləri:
-1. **Qorunan Səhifə Testi**: Sistemə daxil olmadan `/dashboard`-a daxil olmağa çalışın → `/login?redirect=%2Fdashboard` yönləndirməsi baş verir.
-2. **Validasiyalı Giriş**: Hazır "Sarah (Architect)" hesabı ilə daxil olun → Dashboard açılır.
-3. **Session Persistence (F5)**: Səhifəni yeniləyin → Sessiya qorunur və istifadəçi daxil olmuş qalır.
-4. **401 Interceptor**: Session Inspector panelində `⚡ 401 Simulyasiya Et` düyməsinə klikləyin → Qəzasız login redirecti baş verir.
+### 1. Checkpoint 5 (Optimistic UI & Rollback) Testi:
+1. `/tasks` səhifəsinə daxil olun (və ya sağ aşağıdakı **Redux State DevTools** panelini açın).
+2. **Normal Rejim Testi**: Yeni tapşırıq əlavə edin → Tapşırıq dərhal siyahıda görünür (`⏳ API Sync...`), 300ms sonra server təsdiqləyir və yaşıl `[Təsdiqləndi]` toast-ı çıxır.
+3. **Rollback Rejimi Testi**: Səhifənin yuxarısındakı **"⚡ 500 Xətası Simulyasiya Et (Rollback Testi)"** düyməsinə klikləyin (kart qırmızı xəbərdarlıq rejiminə keçəcək).
+4. İndi yeni tapşırıq əlavə edin və ya mövcud tapşırığı silin:
+   * UI dərhal dəyişir (Optimistic).
+   * 300ms sonra Mock API 500 xətası verir.
+   * **Nəticə**: Silinən tapşırıq geri qayıdır / əlavə edilən ləğv olunur, qırmızı Rollback bildirişi çıxır və heç bir məlumat itkisi baş vermir!
 
-### Checkpoint 3 (Global State) Testləri:
-1. **Kataloqdan Səbətə Əlavə**: `/catalog` səhifəsində istənilən məhsulun üzərindəki **"Səbətə Əlavə Et +"** düyməsinə klikləyin → Başlıqdakı səbət sayğacı dərhal artır və sağ yuxarıda yaşıl Toast bildirişi çıxır.
-2. **Səbət Hesablamaları və Promo Kod**: `/cart` səhifəsinə keçin, məhsulların sayını `+` və `-` ilə dəyişin → Subtotal, 18% ƏDV və Grand Total real-vaxtda yenilənir. Promo kod xanasına `FLIN2026` yazıb tətbiq edin → 15% endirim avtomatik çıxılır.
-3. **Tapşırıqlar İdarəetməsi (CRUD & Filtrlər)**: `/tasks` səhifəsində yeni tapşırıq əlavə edin, statusunu dəyişin, "Hamısını Tamamla" düyməsini yoxlayın, Axtarış və Tab filtrlərini test edin.
-4. **Quality Check 2 (Stale Closure Lab)**: `/tasks` səhifəsinin altındakı **"⚡ Stale Closure Testini İcra Et"** düyməsinə klikləyin → Asinxron closure dəyəri ilə Reducer store-un təzə vəziyyəti müqayisə olunur və uğurlu test loqu çıxır.
-5. **Redux DevTools Inspector**: Ekranın sağ aşağı küncündəki **"⚡ Redux State DevTools"** düyməsinə klikləyin → Bütün State Tree-yə və dispatch olunmuş Action-ların axınına canlı baxın.
+### 2. Checkpoint 6 (Error Boundary & Crash Isolation) Testi:
+1. **Lokal Error Boundary Sınağı**: `/dashboard` səhifəsinə keçin. Səhifənin ortasındakı "Lokal Komponent Xəta Təcridi" bölməsindəki **"💥 Bu Komponenti Çökdür"** düyməsinə klikləyin.
+   * **Nəticə**: Yalnız həmin kiçik vidjet qırmızı Error Boundary fallback kartı ilə əvəzlənir. Başlıqdakı menyular, səbət sayğacı, footer və digər bütün səhifələr çökmədən tam işlək qalır!
+   * **"🔄 Komponenti Yenidən Başlat"** düyməsinə basaraq komponenti sıfırlayın.
+2. **Qlobal Error Handler Sınağı**: Ekranın sağ aşağı küncündəki DevTools panelində **"💥 Simulate Crash (CP6)"** düyməsinə klikləyin.
+   * **Nəticə**: Qlobal xəta tutulur, qırmızı bildiriş çıxır, tətbiq ağ ekrana düşmür və işləməyə davam edir.
+
+### 3. Checkpoint 7 (Feature-Based Structure) Testi:
+* Kod bazasında `src/features/` və `src/shared/` qovluqlarını yoxlayın.
+* Bütün import yolları modulyardır və `npm.cmd run build` əmri 100% xətasız build olunur.
