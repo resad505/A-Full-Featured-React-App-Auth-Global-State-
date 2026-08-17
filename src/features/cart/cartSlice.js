@@ -1,5 +1,6 @@
 import { reactive, computed } from 'vue';
 import { toastSlice } from '../../shared/state/slices/toastSlice.js';
+import { apiClient } from '../../shared/services/apiClient.js';
 
 const STORAGE_KEY = 'flin_cart_state';
 
@@ -51,7 +52,8 @@ const state = reactive({
   couponCode: saved.couponCode || '',
   discountPercent: saved.discountPercent || 0,
   isCouponApplied: !!saved.isCouponApplied,
-  taxRate: 0.18 // 18% Tax
+  taxRate: 0.18, // 18% Tax
+  pendingCartSyncs: 0
 });
 
 function persistCart() {
@@ -106,14 +108,21 @@ export const cartSlice = {
     isApplied: state.isCouponApplied
   })),
 
+  pendingCartSyncs: computed(() => state.pendingCartSyncs),
+
   /**
-   * Action: Add item to cart
+   * Action: Add item to cart with Optimistic UI & Rollback
    */
-  addItem(product) {
+  async addItem(product) {
+    const title = product.name || product.title;
     const existing = state.items.find(i => i.id === product.id);
+    const wasExisting = !!existing;
+    const previousQty = existing ? existing.qty : 0;
+
+    // 1. [OPTIMISTIC] Immediately update cart in UI
     if (existing) {
       existing.qty = (existing.qty || 1) + 1;
-      toastSlice.addToast(`"${product.name || product.title}" sayı artırıldı (${existing.qty})`, 'info');
+      toastSlice.addToast(`[Optimistic] "${title}" sayı artırıldı (${existing.qty})`, 'info', 1500);
     } else {
       const priceNum = typeof product.price === 'number' 
         ? product.price 
@@ -121,43 +130,88 @@ export const cartSlice = {
 
       state.items.push({
         id: product.id,
-        title: product.name || product.title,
+        title,
         price: typeof product.price === 'string' ? product.price : `$${priceNum}.00`,
         numericPrice: priceNum,
         qty: 1,
         icon: product.icon || '📦',
         category: product.category || 'Service'
       });
-      toastSlice.addToast(`"${product.name || product.title}" səbətə əlavə edildi!`, 'success');
+      toastSlice.addToast(`[Optimistic] "${title}" səbətə əlavə edildi!`, 'success', 2000);
     }
     persistCart();
-  },
+    state.pendingCartSyncs++;
 
-  /**
-   * Action: Remove item from cart
-   */
-  removeItem(id) {
-    const idx = state.items.findIndex(i => i.id === id);
-    if (idx !== -1) {
-      const removed = state.items[idx];
-      state.items.splice(idx, 1);
-      toastSlice.addToast(`"${removed.title}" səbətdən silindi.`, 'warning');
+    // 2. Call Mock API
+    const response = await apiClient.addToCart(product);
+    state.pendingCartSyncs = Math.max(0, state.pendingCartSyncs - 1);
+
+    // 3. Confirm or Rollback
+    if (response.ok) {
+      // Confirmed
+    } else {
+      // [ROLLBACK] Revert change
+      if (wasExisting) {
+        const item = state.items.find(i => i.id === product.id);
+        if (item) item.qty = previousQty;
+      } else {
+        const idx = state.items.findIndex(i => i.id === product.id);
+        if (idx !== -1) state.items.splice(idx, 1);
+      }
       persistCart();
+      toastSlice.addToast(`❌ [Rollback] Səbət sinxronizasiyası xətası! "${title}" əməliyyatı ləğv edildi.`, 'danger', 4500);
     }
   },
 
   /**
-   * Action: Update quantity
+   * Action: Remove item from cart with Optimistic UI & Rollback
    */
-  updateQuantity(id, qty) {
+  async removeItem(id) {
+    const idx = state.items.findIndex(i => i.id === id);
+    if (idx === -1) return;
+
+    const [removed] = state.items.splice(idx, 1);
+    toastSlice.addToast(`[Optimistic] "${removed.title}" səbətdən silindi.`, 'warning', 2000);
+    persistCart();
+    state.pendingCartSyncs++;
+
+    // Call Mock API
+    const response = await apiClient.removeFromCart(id);
+    state.pendingCartSyncs = Math.max(0, state.pendingCartSyncs - 1);
+
+    if (!response.ok) {
+      // [ROLLBACK] Restore item
+      state.items.splice(idx, 0, removed);
+      persistCart();
+      toastSlice.addToast(`❌ [Rollback] Silinmə xətası! "${removed.title}" səbətə qaytarıldı.`, 'danger', 4500);
+    }
+  },
+
+  /**
+   * Action: Update quantity with Optimistic UI & Rollback
+   */
+  async updateQuantity(id, qty) {
     const item = state.items.find(i => i.id === id);
-    if (item) {
-      if (qty <= 0) {
-        this.removeItem(id);
-      } else {
-        item.qty = Math.min(99, qty);
-        persistCart();
-      }
+    if (!item) return;
+
+    if (qty <= 0) {
+      return this.removeItem(id);
+    }
+
+    const previousQty = item.qty;
+    item.qty = Math.min(99, qty);
+    persistCart();
+    state.pendingCartSyncs++;
+
+    // Call Mock API
+    const response = await apiClient.updateCartQty(id, qty);
+    state.pendingCartSyncs = Math.max(0, state.pendingCartSyncs - 1);
+
+    if (!response.ok) {
+      // [ROLLBACK] Restore previous qty
+      item.qty = previousQty;
+      persistCart();
+      toastSlice.addToast(`❌ [Rollback] Say dəyişdirilmədi! Köhnə saya (${previousQty}) qaytarıldı.`, 'danger', 4000);
     }
   },
 

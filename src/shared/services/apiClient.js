@@ -3,13 +3,28 @@ import { isTokenExpired } from '../utils/token.js';
 import { router } from '../../router/index.js';
 
 /**
- * Mock API Client with Request & Response Interceptors
- * Directly addresses Quality Check 1: Token expiration 401 handling & redirection
+ * Mock API Client with Request & Response Interceptors + CRUD Operations
+ * Implements Checkpoint 5: Mock CRUD against API with Optimistic UI & Rollback simulation
  */
 
 class ApiClient {
   constructor() {
     this.isHandling401 = false;
+    // Simulation controls for evaluator / reviewer
+    this.forceFailure = false;
+    this.randomFailureRate = 0.15; // 15% random failure rate when enabled
+    this.simulateRandomFailures = false;
+  }
+
+  /**
+   * Toggles forced failure for next API CRUD requests (for easy testing of Optimistic UI rollback)
+   */
+  setForceFailure(val) {
+    this.forceFailure = !!val;
+  }
+
+  setRandomFailures(val) {
+    this.simulateRandomFailures = !!val;
   }
 
   /**
@@ -84,8 +99,9 @@ class ApiClient {
   async request(endpoint, options = {}) {
     const { headers } = this._prepareRequest(endpoint, options);
     
-    // Simulate network latency (200ms)
-    await new Promise(res => setTimeout(res, 200));
+    // Simulate realistic network latency (250-400ms)
+    const latency = 250 + Math.floor(Math.random() * 150);
+    await new Promise(res => setTimeout(res, latency));
 
     const authHeader = headers['Authorization'];
     const token = authHeader ? authHeader.replace('Bearer ', '') : null;
@@ -93,6 +109,16 @@ class ApiClient {
     // Evaluate token validity
     if (!token || isTokenExpired(token)) {
       return this._handleResponseError(401, endpoint);
+    }
+
+    // Check forced or simulated network failure
+    const shouldFail = this.forceFailure || (this.simulateRandomFailures && Math.random() < this.randomFailureRate);
+    if (shouldFail) {
+      return {
+        status: 500,
+        ok: false,
+        error: 'Server 500: Xəta baş verdi (Simulyasiya edilmiş şəbəkə/server xətası).'
+      };
     }
 
     // Mock successful endpoints
@@ -132,7 +158,6 @@ class ApiClient {
    * Dedicated action to explicitly trigger 401 error test
    */
   async simulate401Error() {
-    // Force 401 response handling
     await new Promise(res => setTimeout(res, 150));
     return this._handleResponseError(401, '/api/protected/resource');
   }
@@ -143,6 +168,115 @@ class ApiClient {
 
   async getDashboardMetrics() {
     return this.request('/api/dashboard/metrics');
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // CHECKPOINT 5: Real CRUD API Methods for Tasks & Cart
+  // ════════════════════════════════════════════════════════════════════
+
+  /**
+   * POST /api/tasks (Create Task)
+   */
+  async createTask(taskData) {
+    const res = await this.request('/api/tasks', {
+      method: 'POST',
+      body: JSON.stringify(taskData)
+    });
+    if (!res.ok) return res;
+
+    return {
+      status: 201,
+      ok: true,
+      data: {
+        id: Date.now(),
+        ...taskData,
+        serverSynced: true,
+        syncedAt: new Date().toLocaleTimeString()
+      }
+    };
+  }
+
+  /**
+   * PATCH /api/tasks/:id (Update / Toggle Task)
+   */
+  async updateTask(id, patch) {
+    const res = await this.request(`/api/tasks/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(patch)
+    });
+    if (!res.ok) return res;
+
+    return {
+      status: 200,
+      ok: true,
+      data: { id, ...patch, serverSynced: true }
+    };
+  }
+
+  /**
+   * DELETE /api/tasks/:id (Delete Task)
+   */
+  async deleteTask(id) {
+    const res = await this.request(`/api/tasks/${id}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) return res;
+
+    return {
+      status: 200,
+      ok: true,
+      data: { id, deleted: true }
+    };
+  }
+
+  /**
+   * POST /api/cart/items (Add to Cart)
+   */
+  async addToCart(item) {
+    const res = await this.request('/api/cart/items', {
+      method: 'POST',
+      body: JSON.stringify(item)
+    });
+    if (!res.ok) return res;
+
+    return {
+      status: 201,
+      ok: true,
+      data: { ...item, serverSynced: true }
+    };
+  }
+
+  /**
+   * DELETE /api/cart/items/:id (Remove from Cart)
+   */
+  async removeFromCart(id) {
+    const res = await this.request(`/api/cart/items/${id}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) return res;
+
+    return {
+      status: 200,
+      ok: true,
+      data: { id, removed: true }
+    };
+  }
+
+  /**
+   * PATCH /api/cart/items/:id (Update Cart Quantity)
+   */
+  async updateCartQty(id, qty) {
+    const res = await this.request(`/api/cart/items/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ qty })
+    });
+    if (!res.ok) return res;
+
+    return {
+      status: 200,
+      ok: true,
+      data: { id, qty, serverSynced: true }
+    };
   }
 }
 

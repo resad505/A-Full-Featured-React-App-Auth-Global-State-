@@ -3159,3 +3159,104 @@ code {
 @media (max-width: 480px) {
   .task-create-form__grid { grid-template-columns: 1fr; }
 }
+
+/* ==========================================================================
+   Checkpoint 5: Optimistic UI & Mock API Rollback Styles (BEM)
+   ========================================================================== */
+
+.api-sim-card {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-acc);
+  border-radius: var(--r-xl);
+  padding: 18px 22px;
+  margin-bottom: 22px;
+  transition: all var(--t-fast);
+}
+
+.api-sim-card--failing {
+  border-color: rgba(244, 63, 94, 0.4);
+  background: rgba(244, 63, 94, 0.04);
+  box-shadow: 0 0 16px rgba(244, 63, 94, 0.08);
+}
+
+.api-sim-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.api-sim-card__title-col {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.api-sim-card__title {
+  font-size: 0.96rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.api-sim-card__desc {
+  font-size: 0.84rem;
+  color: var(--col-text-2);
+  line-height: 1.55;
+  margin-bottom: 0;
+}
+
+.rollback-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: rgba(244, 63, 94, 0.1);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  border-radius: var(--r-md);
+  color: #fb7185;
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+  animation: fadeIn 0.3s ease;
+}
+
+.rollback-banner__icon {
+  font-size: 1.1rem;
+}
+
+.rollback-banner__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.task-item--syncing {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.03);
+}
+
+.task-item__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.badge--pulse {
+  animation: badgePulse 1.2s infinite ease-in-out;
+}
+
+@keyframes badgePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.65; transform: scale(0.96); }
+}
+
+.demo-btn--active {
+  background: rgba(244, 63, 94, 0.2) !important;
+  border-color: rgba(244, 63, 94, 0.6) !important;
+  color: #fb7185 !important;
+}
+
