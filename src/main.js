@@ -3,16 +3,23 @@ import { router } from './router/index.js';
 import { AppHeader } from './components/AppHeader.js';
 import { RouteBanner } from './components/RouteBanner.js';
 import { AppFooter } from './components/AppFooter.js';
+import { ToastContainer } from './components/ToastContainer.js';
+import { StateInspector } from './components/StateInspector.js';
 
 const App = {
   name: 'App',
   components: {
     AppHeader,
     RouteBanner,
-    AppFooter
+    AppFooter,
+    ToastContainer,
+    StateInspector
   },
   template: `
     <div class="app-layout">
+      <!-- Global notification toasts -->
+      <ToastContainer />
+
       <AppHeader />
       <RouteBanner />
       
@@ -26,6 +33,9 @@ const App = {
         </div>
       </main>
       
+      <!-- Global Redux DevTools State Inspector -->
+      <StateInspector />
+
       <AppFooter />
     </div>
   `

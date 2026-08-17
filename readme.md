@@ -1,73 +1,85 @@
-# Flin · Vue 3 Frontend Tətbiqi (Checkpoint 2: Authentication Flow)
+# Flin · Vue 3 Frontend Tətbiqi (Auth + Global State)
 
-Bu layihə **Vue 3**, **Vue Router 4**, **JWT (JSON Web Token) Sessiya İdarəetməsi** və **BEM (Block Element Modifier)** metodologiyası ilə hazırlanmış, yüksək keyfiyyətli Developer-First frontend tətbiqidir.
-
----
-
-## 📌 Checkpoint 2: İcra Olunmuş İşlər və Nəticələr (20 Bal)
-
-Bu mərhələdə (`guide.md:L4`, `assestments.md`, `quality__checks.md` sənədlərinə uyğun olaraq) tam və təhlükəsiz **Autentifikasiya Axını (Authentication Flow)** reallaşdırılmışdır:
-
-### 1. Təkmilləşdirilmiş Giriş Forması (`src/views/LoginView.js`)
-* **Real-vaxt Form Doğrulaması (Validation)**:
-  * Email formatı yoxlanışı (Regex).
-  * Şifrənin minimum 6 simvol uzunluğu tələbi.
-  * Hər sahə üçün xüsusi vizual xəta bildirişləri (`.auth-form__error-msg`).
-* **İstifadəçi Təcrübəsi (UX)**:
-  * Şifrəni göstər/gizlət düyməsi (`auth-form__toggle-pwd`).
-  * Şəbəkə gecikməsini simulyasiya edən asinxron yüklənmə spineri (`.spinner`) və `disabled` submit düyməsi.
-  * Sürətli test üçün hazır hesab seçiciləri (**Sarah - Architect**, **Alex - Lead Dev**, **Elena - PM**).
-  * **"Məni xatırla" (Remember Me)**: 7 günlük uzadılmış JWT sessiyası və ya 1 saatlıq standart sessiya seçimi.
-* **Redirect & 401 Xəbərdarlığı**:
-  * Qorunan marşrutdan və ya 401 sessiya bitməsindən yönləndirildikdə istifadəçiyə dəqiq kontekstual bildiriş göstərilir.
+Bu layihə **Vue 3**, **Vue Router 4**, **Centralized Global State (Context / Redux Pattern)**, **JWT Sessiya İdarəetməsi** və **BEM (Block Element Modifier)** metodologiyası ilə hazırlanmış, yüksək keyfiyyətli Developer-First frontend tətbiqidir.
 
 ---
 
-### 2. JWT Token Strukturu və Saxlanması (`src/utils/token.js` & `src/state/authStore.js`)
-* **3 Hissəli Base64Url Standart JWT Generator**:
-  * **Header**: `{ "alg": "HS256", "typ": "JWT" }`
-  * **Payload**: `{ "iss": "flin-auth-service", "sub": "usr_...", "email": "...", "displayName": "...", "role": "...", "permissions": [...], "iat": 1771322700, "exp": 1771326300, "jti": "jwt_..." }`
-  * **Signature**: Təhlükəsiz mock imza şifrələnməsi.
-* **Token İdarəetmə Funksiyaları**:
-  * `createMockJwt()` — Xüsusi TTL (Time To Live) ilə token yaradılması.
-  * `decodeJwt()` — Brauzer səviyyəsində payload və header-in dərhal oxunması.
-  * `isTokenExpired()` — Tokenin son istifadə vaxtının cari vaxtla müqayisəsi.
-  * `getTokenRemainingSeconds()` — Sessiyanın bitməsinə qalan saniyələrin hesablanması.
+## 📌 Checkpoint 1: Navigating with Router & Route Guards (15 Bal)
+
+Bu mərhələdə (`guide.md:L3`, `assestments.md`, `quality__checks.md` sənədlərinə uyğun olaraq) layihənin marşrutlaşdırma infrastrukturu və qorunan səhifələrə icazəsiz girişlərin qarşısını alan qlobal keşişlər (guards) qurulmuşdur:
+
+### 1. Marşrutlaşdırma və Route Kateqoriyaları
+* **İctimai Marşrutlar (Public Routes)**:
+  * `/` — Əsas ana səhifə, interaktiv marşrut xəritəsi və sistem statusu.
+  * `/catalog` — Məhsul və xidmətlər kataloqu (istənilən istifadəçi baxa bilər).
+* **Qorunan Marşrutlar (Protected Routes - `meta: { requiresAuth: true }`)**:
+  * `/dashboard` — İdarəetmə paneli və reaktiv statistik göstəricilər.
+  * `/tasks` — Qlobal tapşırıqlar lövhəsi və iş axını.
+  * `/cart` — Səbət, endirim tətbiqi və faktura checkout.
+  * `/profile` — İstifadəçi hesabı və sessiya məlumatları.
+* **Qonaq Marşrutu (Guest Route - `meta: { requiresGuest: true }`)**:
+  * `/login` — Giriş portalı. Daxil olmuş istifadəçilər bu səhifəyə daxil olduqda avtomatik olaraq `/dashboard`-a yönləndirilir.
+* **404 Xəta Marşrutu (Catch-All)**:
+  * `/:pathMatch(.*)*` — Mövcud olmayan bütün URL-lər xüsusi dizayn edilmiş `/404` (`NotFoundView`) səhifəsinə yönləndirilir.
+
+### 2. Vue Router Navigation Guards (`beforeEach`) Mexanizmi
+1. **İcazəsiz Girişlərin Qarşısının Alınması**: Qorunan səhifəyə icazəsiz keçid zamanı keçid bloklanır, `"Giriş Tələb Olunur"` xəbərdarlığı çıxır və istifadəçi `/login?redirect=${to.fullPath}` ünvanına yönləndirilir.
+2. **Girişdən Sonra Qayıdış**: Uğurlu girişdən sonra istifadəçi avtomatik olaraq ilk cəhd etdiyi `redirect` səhifəsinə qaytarılır.
+3. **Dinamik Səhifə Başlıqları**: SEO və UX üçün `document.title` hər səhifə dəyişdikdə dinamik yenilənir.
 
 ---
 
-### 3. Səhifə Yeniləndikdə Sessiyanın Qorunması (Session Protection on Refresh)
-* İstifadəçi qorunan səhifələrdə (`/dashboard`, `/tasks`, `/cart`, `/profile`) olarkən səhifəni yenilədikdə (`F5` və ya `Ctrl+R`):
-  * `authStore` dərhal `localStorage`-dən (`flin_auth_token`, `flin_user_data`) məlumatları bərpa edir.
-  * Tokenin etibarlılığı yoxlanılır; əgər vaxtı keçməyibsə, istifadəçi login-ə atılmadan olduğu qorunan səhifədə qalır.
-  * Əgər tokenin vaxtı bitibsə, sessiya təmizlənir və istifadəçi `/login?redirect=...&reason=401_expired` ünvanına yönləndirilir.
+## 📌 Checkpoint 2: Authentication Flow & Session Protection (20 Bal)
+
+Bu mərhələdə (`guide.md:L4`) təhlükəsiz və sənaye standartlarına uyğun autentifikasiya axını reallaşdırılmışdır:
+
+### 1. Validasiyalı Giriş Forması (`src/views/LoginView.js`)
+* **Real-vaxt Sahə Doğrulaması**: Email regex yoxlanışı, minimum 6 simvollu şifrə tələbi və sahəaltı xəta mesajları.
+* **UX Xüsusiyyətləri**: Şifrəni göstər/gizlət düyməsi, asinxron yüklənmə spineri və 1 kliklə test preseti (**Sarah - Architect**, **Alex - Lead Dev**, **Elena - PM**).
+* **"Məni xatırla" (Remember Me)**: 7 günlük uzadılmış JWT sessiyası və ya 1 saatlıq standart sessiya seçimi.
+
+### 2. Standart 3 Hissəli JWT İdarəetməsi (`src/utils/token.js`)
+* **Header**, **Payload Claims** (`sub`, `email`, `role`, `permissions`, `iat`, `exp`, `jti`) və **Signature** Base64Url formatlı JWT tokenlər.
+* Səhifə yeniləndikdə (`F5` / Refresh) `localStorage`-dən (`flin_auth_token`) sessiyanın itkisiz bərpası.
+
+### 3. Quality Checks Tələblərinin İcrası:
+* **Quality Check 1 (401 Interceptor Simulyasiyası)**: `apiClient.js` daxilində 401 xətası aşkar edildikdə sessiyanı sonlandırır və qəzasız/dövrəsiz `/login?redirect=...&reason=401_expired` səhifəsinə yönləndirir.
+* **Quality Check 3 (Təmiz Çıxış və Back Button Qoruması)**: Çıxış zamanı bütün tokenlər və `localStorage` sıfırlanır, geri düyməsi ilə qorunan səhifələrə daxil olmağa imkan verilmir.
 
 ---
 
-### 4. Təmiz Çıxış və Vəziyyət Sıfırlanması (Quality Check 3)
-* İstifadəçi çıxış etdikdə (`logout`):
-  * `authStore.state.token = null`, `user = null` və reaktiv taymer dayandırılır.
-  * `localStorage`-dən bütün həssas açarlar (`flin_auth_token`, `flin_user_data`, `flin_remember_me`) tam silinir.
-  * Brauzerin "Geri" (Back) düyməsi ilə qorunan səhifəyə qayıtmaq cəhdi router guard tərəfindən bloklanır və yenidən giriş tələb olunur.
+## 📌 Checkpoint 3: Global State Management (Context / Redux Pattern) (20 Bal)
+
+Bu mərhələdə (`guide.md:L5`, `assestments.md`, `quality__checks.md` sənədlərinə uyğun olaraq) layihə üçün mərkəzləşdirilmiş **Global State Store & Redux / Reducer Dispatcher** arxitekturası qurulmuşdur:
+
+### 1. Mərkəzləşdirilmiş Qlobal Store Arxitekturası (`src/state/index.js`)
+* **Mərkəzi Dispatcher**: `store.dispatch({ type, payload })` vasitəsilə vahid action yönləndirilməsi və reducer emalı.
+* **Middleware Logging & State Snapshot**: Hər dispatch olunan action üçün əvvəlki/sonrakı vəziyyət qeydiyyatı və tarixçə axını (`actionHistory`).
+* **Slices Sistemi**:
+  * **Auth Slice (`authStore.js`)**: İstifadəçi autentifikasiyası, JWT token, sessiya TTL və icazələr.
+  * **Cart Slice (`src/state/slices/cartSlice.js`)**: Səbət məhsulları, kəmiyyət tənzimləməsi (`+/-`), promo kod tətbiqi (`FLIN2026` 15%, `DEVJOINT50` 50%), 18% ƏDV hesablanması və `localStorage` sinxronizasiyası.
+  * **Tasks Slice (`src/state/slices/taskSlice.js`)**: Tapşırıqların yaradılması, status toggle, silinmə, çoxlu tamamlama (bulk complete), status/axtarış/prioritet filtrləri və statistika hesablaması.
+  * **Toast Slice (`src/state/slices/toastSlice.js`)**: Qlobal floating bildiriş sistemi (success, info, warning, danger).
 
 ---
 
-### 5. Mock API Interceptor və 401 Token Expiration Simulyasiyası (Quality Check 1)
-* `src/services/apiClient.js` daxilində tam Request və Response interceptor arxitekturası qurulmuşdur:
-  * **Request**: Hər sorğuya avtomatik `Authorization: Bearer <token>` əlavə edir.
-  * **Response**: `401 Unauthorized` cavabı aşkar edildikdə avtomatik olaraq sessiyanı sonlandırır, bildiriş qoyur və heç bir sonsuz dövrə (infinite loop) və ya tətbiq qəzası (crash) yaratmadan login səhifəsinə yönləndirir.
+### 2. Quality Check 2: Stale Closure vs Fresh Reducer Dispatch Diaqnostikası
+* **Problem**: React/Vue-da callback və asinxron funksiyalarda closure daxilində köhnə (stale) dəyərin yadda qalması klassik frontend problemidir.
+* **Həll və Test**: `/tasks` səhifəsində və DevTools-da xüsusi **"Stale Closure vs Fresh Reducer Dispatch"** test modulu yaradılmışdır. Modul asinxron gecikmə zamanı köhnə closure dəyəri ilə Reducer store-un təmin etdiyi təzə vəziyyəti canlı müqayisə edərək testin keçdiyini sübut edir.
 
 ---
 
-### 6. İnteraktiv Token & Session Inspector (`src/components/SessionInspector.js`)
-Dashboard və Profil səhifələrinə inteqrasiya edilmiş xüsusi test konsolu vasitəsilə:
-* Canlı JWT Header və Payload iddialarını (Claims) JSON formatında görmək mümkündür.
-* Sessiyanın bitməsinə qalan vaxt canlı saniyəbəsaniyə taymerlə göstərilir.
-* **Interaktiv Düymələr**:
-  * 🔄 **"Tokeni Yenilə (Refresh)"** — Mövcud istifadəçi üçün yeni JWT yaradır və vaxtı uzadır.
-  * ⚡ **"401 Xətasını Simulyasiya Et"** — Interceptor-un işləməsini və qəzasız login redirectini test edir.
-  * ⏳ **"Müddəti Bitir (Force Expire)"** — Tokenin vaxtını süni şəkildə keçmişə çəkir.
-  * 🚪 **"Təmiz Çıxış (Wipe Storage)"** — Bütün həssas sessiya məlumatlarını dərhal silir.
+### 3. Redux DevTools Tipli State Inspector (`src/components/StateInspector.js`)
+* Ekranın aşağı sağ küncündə yerləşən interaktiv DevTools paneli:
+  * **State Tree**: Bütün tətbiqin qlobal JSON vəziyyət ağacı (Auth, Cart, Tasks, Toasts).
+  * **Action Log**: Real-vaxt rejimində axan action axını, zaman damğası və payload məlumatları.
+  * **Manual Dispatcher**: İstənilən action-ı JSON formatında əl ilə göndərmək imkanı.
+  * **Sürətli Test Düymələri**: Bir kliklə səbətə məhsul atmaq, tapşırıq yaratmaq və ya promo kod yoxlamaq.
+
+---
+
+### 4. Qlobal Toast Bildiriş Sistemi (`src/components/ToastContainer.js`)
+* Tətbiqin istənilən yerindən dispatch olunan hərəkətlərə (məs: "Məhsul səbətə əlavə edildi", "Promo kod tətbiq edildi", "Tapşırıq silindi") uyğun olaraq sağ yuxarı küncdə animasiyalı və avtomatik itən toast-lar göstərilir.
 
 ---
 
@@ -77,9 +89,9 @@ Layihədə bütün vizual elementlər və CSS dərhal oxunaqlı və modulyar ola
 
 | Tip | Nümunə | Təsviri |
 | :--- | :--- | :--- |
-| **Bloklar (Block)** | `.app-header`, `.session-inspector`, `.auth-form`, `.inspector-card` | Müstəqil funksional komponent vahidləri |
-| **Elementlər (Element)** | `.auth-form__input`, `.session-inspector__ttl`, `.demo-presets__label` | Blokun daxilindəki tərkib hissələri (`__` ilə ayrılır) |
-| **Modifikatorlar (Modifier)** | `.btn--solid`, `.btn--danger-ghost`, `.storage-tag--active`, `.badge--protected` | Vəziyyət və ya görünüş dəyişiklikləri (`--` ilə ayrılır) |
+| **Bloklar (Block)** | `.app-header`, `.state-inspector`, `.cart-card`, `.task-item`, `.toast-container` | Müstəqil funksional komponent vahidləri |
+| **Elementlər (Element)** | `.cart-card__name`, `.task-item__title`, `.state-inspector__tab`, `.toast-item__msg` | Blokun daxilindəki tərkib hissələri (`__` ilə ayrılır) |
+| **Modifikatorlar (Modifier)** | `.btn--solid`, `.task-tab--active`, `.toast-item--success`, `.badge--protected` | Vəziyyət və ya görünüş dəyişiklikləri (`--` ilə ayrılır) |
 
 ---
 
@@ -95,23 +107,30 @@ Layihədə bütün vizual elementlər və CSS dərhal oxunaqlı və modulyar ola
 │   ├── router/
 │   │   └── index.js           # Vue Router marşrutları və Navigation Guards (beforeEach)
 │   ├── state/
-│   │   └── authStore.js       # Reaktiv Auth Store, JWT idarəetməsi və taymer
+│   │   ├── index.js           # Mərkəzləşdirilmiş Global Store & Redux Dispatcher
+│   │   ├── authStore.js       # Reaktiv Auth Store və JWT idarəetməsi
+│   │   └── slices/
+│   │       ├── cartSlice.js   # Shopping Cart Slice (qiymət, vergi, kupon, persistence)
+│   │       ├── taskSlice.js   # Task Manager Slice (CRUD, filtrlər, Stale Closure testi)
+│   │       └── toastSlice.js  # Global Toast Notifications Slice
 │   ├── services/
 │   │   └── apiClient.js       # Mock API Client & 401 Response Interceptor
 │   ├── utils/
 │   │   └── token.js           # JWT Kodlaşdırma, Dekodlaşdırma və Vaxt hesablama utilitləri
 │   ├── components/
-│   │   ├── AppHeader.js       # Başlıq paneli və sessiya indikatoru
+│   │   ├── AppHeader.js       # Başlıq paneli, dinamik səbət və tapşırıq sayğacları
+│   │   ├── ToastContainer.js  # Qlobal toast bildiriş konteyneri
+│   │   ├── StateInspector.js  # Redux DevTools State & Action Inspector
 │   │   ├── SessionInspector.js# Canlı JWT və Sessiya test konsolu
 │   │   ├── RouteBanner.js     # Keçid bildiriş banneri
 │   │   └── AppFooter.js       # Footer komponenti
 │   └── views/
 │       ├── HomeView.js        # İctimai ana səhifə və route guard xəritəsi
-│       ├── CatalogView.js     # İctimai məhsul kataloqu (/catalog)
+│       ├── CatalogView.js     # İctimai məhsul kataloqu və səbətə birbaşa əlavə (/catalog)
 │       ├── LoginView.js       # Validasiyalı giriş və demo hesablar (/login)
-│       ├── DashboardView.js   # Qorunan idarəetmə paneli (/dashboard)
-│       ├── TasksView.js       # Qorunan tapşırıqlar lövhəsi (/tasks)
-│       ├── CartView.js        # Qorunan səbət bölməsi (/cart)
+│       ├── DashboardView.js   # Qorunan idarəetmə paneli və canlı statistika (/dashboard)
+│       ├── TasksView.js       # Qorunan tapşırıqlar lövhəsi və Stale Closure Lab (/tasks)
+│       ├── CartView.js        # Qorunan səbət, promo kod və faktura checkout (/cart)
 │       ├── ProfileView.js     # Qorunan profil və JWT parametrləri (/profile)
 │       └── NotFoundView.js    # 404 Tapılmayan səhifə marşrutu (/404)
 ├── readme.md                  # Layihə sənədləşməsi
@@ -142,21 +161,17 @@ npm.cmd run build
 
 ---
 
-## 🧪 Qiymətləndirmə üçün Canlı Test Ssenariləri (Checkpoint 2)
+## 🧪 Qiymətləndirmə üçün Canlı Test Ssenariləri
 
-1. **Giriş və Validasiya Testi**:
-   * `/login` səhifəsinə keçin, səhv formatda email və ya qısa şifrə daxil edin → Sahələrin altında qırmızı xəta mesajları görünəcək.
-   * Hazır **"Architect (Sarah)"** düyməsinə klikləyin → Forma dərhal doldurulur.
-   * "Daxil Ol" düyməsinə klikləyin → Yüklənmə spineri çıxır və `/dashboard` səhifəsinə yönləndirilir.
+### Checkpoint 1 & 2 Testləri:
+1. **Qorunan Səhifə Testi**: Sistemə daxil olmadan `/dashboard`-a daxil olmağa çalışın → `/login?redirect=%2Fdashboard` yönləndirməsi baş verir.
+2. **Validasiyalı Giriş**: Hazır "Sarah (Architect)" hesabı ilə daxil olun → Dashboard açılır.
+3. **Session Persistence (F5)**: Səhifəni yeniləyin → Sessiya qorunur və istifadəçi daxil olmuş qalır.
+4. **401 Interceptor**: Session Inspector panelində `⚡ 401 Simulyasiya Et` düyməsinə klikləyin → Qəzasız login redirecti baş verir.
 
-2. **Səhifə Yenilənməsi Testi (Session Persistence on Refresh)**:
-   * `/dashboard` və ya `/profile` səhifəsində olarkən brauzerdə səhifəni yeniləyin (`F5`).
-   * *Nəticə*: İstifadəçi qorunan səhifədə qalır, `localStorage`-dən token bərpa olunur və reaktiv taymer davam edir.
-
-3. **401 Xəta Simulyasiyası (Quality Check 1)**:
-   * Dashboard və ya Profil səhifəsindəki Session Inspector panelində **"⚡ 401 Xətasını Simulyasiya Et"** düyməsinə klikləyin.
-   * *Nəticə*: `apiClient` interceptor-u 401 cavabını tutur, tətbiq çökmədən və dövrəyə düşmədən istifadəçini `🔒 401 Sessiya Müddəti Bitdi` bildirişi ilə `/login?redirect=...` səhifəsinə yönləndirir.
-
-4. **Təmiz Çıxış və Back Button Qoruması (Quality Check 3)**:
-   * Başlıqdakı və ya paneldəki **"Çıxış"** düyməsinə klikləyin.
-   * *Nəticə*: Bütün tokenlər və `localStorage` sıfırlanır. Brauzerin "Geri" (Back) düyməsinə kliklədikdə qorunan səhifə açılmır, login səhifəsinə istiqamətləndirilir.
+### Checkpoint 3 (Global State) Testləri:
+1. **Kataloqdan Səbətə Əlavə**: `/catalog` səhifəsində istənilən məhsulun üzərindəki **"Səbətə Əlavə Et +"** düyməsinə klikləyin → Başlıqdakı səbət sayğacı dərhal artır və sağ yuxarıda yaşıl Toast bildirişi çıxır.
+2. **Səbət Hesablamaları və Promo Kod**: `/cart` səhifəsinə keçin, məhsulların sayını `+` və `-` ilə dəyişin → Subtotal, 18% ƏDV və Grand Total real-vaxtda yenilənir. Promo kod xanasına `FLIN2026` yazıb tətbiq edin → 15% endirim avtomatik çıxılır.
+3. **Tapşırıqlar İdarəetməsi (CRUD & Filtrlər)**: `/tasks` səhifəsində yeni tapşırıq əlavə edin, statusunu dəyişin, "Hamısını Tamamla" düyməsini yoxlayın, Axtarış və Tab filtrlərini test edin.
+4. **Quality Check 2 (Stale Closure Lab)**: `/tasks` səhifəsinin altındakı **"⚡ Stale Closure Testini İcra Et"** düyməsinə klikləyin → Asinxron closure dəyəri ilə Reducer store-un təzə vəziyyəti müqayisə olunur və uğurlu test loqu çıxır.
+5. **Redux DevTools Inspector**: Ekranın sağ aşağı küncündəki **"⚡ Redux State DevTools"** düyməsinə klikləyin → Bütün State Tree-yə və dispatch olunmuş Action-ların axınına canlı baxın.
