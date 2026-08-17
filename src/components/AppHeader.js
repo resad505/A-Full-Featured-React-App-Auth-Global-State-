@@ -1,4 +1,7 @@
+import { computed } from 'vue';
 import { authStore } from '../state/authStore.js';
+import { cartSlice } from '../state/slices/cartSlice.js';
+import { taskSlice } from '../state/slices/taskSlice.js';
 import { useRouter, useRoute } from 'vue-router';
 
 export const AppHeader = {
@@ -6,6 +9,9 @@ export const AppHeader = {
   setup() {
     const router = useRouter();
     const route = useRoute();
+
+    const cartCount = computed(() => cartSlice.itemCount.value);
+    const activeTasksCount = computed(() => taskSlice.stats.value.active);
 
     const handleAuthToggle = () => {
       authStore.toggleMockAuth();
@@ -19,6 +25,8 @@ export const AppHeader = {
 
     return {
       authStore,
+      cartCount,
+      activeTasksCount,
       handleAuthToggle
     };
   },
@@ -52,6 +60,14 @@ export const AppHeader = {
               <router-link to="/tasks" class="nav-list__link nav-list__link--gated" active-class="nav-list__link--active">
                 <svg class="nav-list__gate-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5.5 7V4.5a2.5 2.5 0 015 0V7"/></svg>
                 Tasks
+                <span class="nav-badge" v-if="activeTasksCount > 0">{{ activeTasksCount }}</span>
+              </router-link>
+            </li>
+            <li class="nav-list__item">
+              <router-link to="/cart" class="nav-list__link nav-list__link--gated" active-class="nav-list__link--active">
+                <svg class="nav-list__gate-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><rect x="3" y="7" width="10" height="8" rx="1.5"/><path d="M5.5 7V4.5a2.5 2.5 0 015 0V7"/></svg>
+                Səbət
+                <span class="nav-badge nav-badge--cart" v-if="cartCount > 0">{{ cartCount }}</span>
               </router-link>
             </li>
           </ul>

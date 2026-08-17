@@ -1,4 +1,7 @@
+import { computed } from 'vue';
 import { authStore } from '../state/authStore.js';
+import { cartSlice } from '../state/slices/cartSlice.js';
+import { taskSlice } from '../state/slices/taskSlice.js';
 import { useRouter } from 'vue-router';
 import { SessionInspector } from '../components/SessionInspector.js';
 
@@ -10,12 +13,22 @@ export const DashboardView = {
   setup() {
     const router = useRouter();
 
+    const cartCount = computed(() => cartSlice.itemCount.value);
+    const activeTasksCount = computed(() => taskSlice.stats.value.active);
+    const completedTasksCount = computed(() => taskSlice.stats.value.completed);
+
     const handleLogout = () => {
       authStore.logout('İdarəetmə panelindən çıxış edildi.');
       router.push('/login');
     };
 
-    return { authStore, handleLogout };
+    return { 
+      authStore, 
+      cartCount, 
+      activeTasksCount, 
+      completedTasksCount, 
+      handleLogout 
+    };
   },
   template: `
     <section class="dashboard-view">
@@ -23,11 +36,11 @@ export const DashboardView = {
         <div class="view-top__left">
           <div class="view-top__badge">
             <span class="pulse-dot"></span>
-            <span>Qorunan Marşrut · Authenticated</span>
+            <span>Qorunan Marşrut · Global State Connected</span>
           </div>
           <h1 class="view-top__title">İdarəetmə Paneli</h1>
           <p class="view-top__sub">
-            Sessiya aktivdir. Səhifəni yenilədikdə (F5) sessiya <code>localStorage</code> vasitəsilə bərpa olunur.
+            Qlobal vəziyyət (Redux/Context Store) real-vaxt rejimində bütün komponentlərlə sinxronlaşır.
           </p>
         </div>
         <button class="btn btn--danger-ghost btn--sm" @click="handleLogout">
@@ -53,19 +66,19 @@ export const DashboardView = {
       <!-- Token & Session Live Inspector -->
       <SessionInspector />
 
-      <!-- Stats Grid -->
+      <!-- Real-time Stats Grid from Global Slices -->
       <div class="stats-grid">
         <div class="stat-block">
-          <span class="stat-block__num">12</span>
-          <span class="stat-block__label">Aktiv Tapşırıq</span>
+          <span class="stat-block__num">{{ activeTasksCount }}</span>
+          <span class="stat-block__label">Gözləyən Tapşırıq</span>
         </div>
         <div class="stat-block">
-          <span class="stat-block__num">3</span>
-          <span class="stat-block__label">Səbət Elementi</span>
+          <span class="stat-block__num">{{ cartCount }}</span>
+          <span class="stat-block__label">Səbətdəki Məhsul</span>
         </div>
         <div class="stat-block stat-block--accent">
-          <span class="stat-block__num">✓</span>
-          <span class="stat-block__label">Session Guard Aktiv</span>
+          <span class="stat-block__num">{{ completedTasksCount }}</span>
+          <span class="stat-block__label">Tamamlanmış İş</span>
         </div>
       </div>
 
@@ -75,15 +88,15 @@ export const DashboardView = {
         <div class="quick-nav__list">
           <router-link to="/tasks" class="quick-nav__item">
             <div class="quick-nav__info">
-              <span class="quick-nav__label">/tasks</span>
-              <span class="quick-nav__desc">Tapşırıqlar Lövhəsi</span>
+              <span class="quick-nav__label">/tasks ({{ activeTasksCount }} gözləyir)</span>
+              <span class="quick-nav__desc">Tapşırıqlar Lövhəsi və Stale Closure Testi</span>
             </div>
             <span class="quick-nav__arrow">→</span>
           </router-link>
           <router-link to="/cart" class="quick-nav__item">
             <div class="quick-nav__info">
-              <span class="quick-nav__label">/cart</span>
-              <span class="quick-nav__desc">Səbət və Ödəniş</span>
+              <span class="quick-nav__label">/cart ({{ cartCount }} məhsul)</span>
+              <span class="quick-nav__desc">Səbət, Promo Kod və Faktura</span>
             </div>
             <span class="quick-nav__arrow">→</span>
           </router-link>
