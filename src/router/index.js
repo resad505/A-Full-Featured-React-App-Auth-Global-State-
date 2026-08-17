@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { authStore } from '../state/authStore.js';
+import { isTokenExpired } from '../utils/token.js';
 import { HomeView } from '../views/HomeView.js';
 import { CatalogView } from '../views/CatalogView.js';
 import { LoginView } from '../views/LoginView.js';
@@ -82,7 +83,6 @@ const routes = [
       isPublic: true
     }
   },
-  // Catch all undefined routes and redirect to 404
   {
     path: '/:pathMatch(.*)*',
     redirect: '/404'
@@ -97,15 +97,30 @@ export const router = createRouter({
   }
 });
 
-// CHECKPOINT 1: Navigation Guard Implementation
+// CHECKPOINT 1 & 2: Navigation Guard & Token Validity Guard
 router.beforeEach((to, from, next) => {
   // Update document title for SEO & UX
   const appName = 'Flin';
   document.title = to.meta.title ? `${to.meta.title} · ${appName}` : appName;
 
-  const isAuth = authStore.isAuthenticated.value || !!localStorage.getItem('flin_auth_token');
+  const rawToken = localStorage.getItem('flin_auth_token') || authStore.state.token;
+  const tokenValid = rawToken && !isTokenExpired(rawToken);
+  const isAuth = authStore.isAuthenticated.value && tokenValid;
+
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
   const requiresGuest = to.matched.some(record => record.meta.requiresGuest);
+
+  // If token is found expired during navigation, clean it up
+  if (rawToken && isTokenExpired(rawToken) && requiresAuth) {
+    authStore.logout('🔒 Sessiyanızın vaxtı bitdi. Zəhmət olmasa yenidən daxil olun.');
+    return next({
+      path: '/login',
+      query: { 
+        redirect: to.fullPath,
+        reason: '401_expired'
+      }
+    });
+  }
 
   // Scenario 1: Protected Route accessed without authentication
   if (requiresAuth && !isAuth) {
@@ -113,7 +128,6 @@ router.beforeEach((to, from, next) => {
       `🔒 Giriş Tələb Olunur: "${to.meta.title || to.path}" səhifəsinə daxil olmaq üçün zəhmət olmasa daxil olun.`,
       'warning'
     );
-    // Redirect to login preserving the attempted target destination
     return next({
       path: '/login',
       query: { redirect: to.fullPath }
@@ -126,7 +140,7 @@ router.beforeEach((to, from, next) => {
     return next({ path: '/dashboard' });
   }
 
-  // Clear transient warnings if navigating normally
+  // Clear transient notice when navigating between normal pages
   if (!requiresAuth && to.path !== '/login' && from.path !== to.path) {
     authStore.clearNotice();
   }
