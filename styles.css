@@ -2643,3 +2643,519 @@ code {
   .stats-grid { grid-template-columns: 1fr; }
   .profile-card { grid-template-columns: 1fr; gap: 20px; }
 }
+
+/* ==========================================================================
+   Checkpoint 4 — Validated Forms
+   All form blocks follow strict BEM naming
+   ========================================================================== */
+
+/* ── Shared Field Utilities ─────────────────────────────────────────────── */
+
+.field-hint {
+  font-size: 0.73rem;
+  color: var(--col-text-3);
+  margin-top: 4px;
+  display: block;
+}
+
+.field-hint--inline {
+  display: inline;
+  margin-left: 6px;
+  font-size: 0.72rem;
+}
+
+/* Shake animation for form submission with errors */
+@keyframes formShake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX(6px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+.form--shake { animation: formShake 0.35s ease; }
+
+/* ── Profile Edit Panel ─────────────────────────────────────────────────── */
+
+.profile-edit-panel {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-md);
+  border-radius: var(--r-xl);
+  padding: 28px 32px;
+  margin-top: 28px;
+}
+
+.profile-edit-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.profile-edit-panel__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--col-text);
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.profile-edit-panel__sub {
+  font-size: 0.8rem;
+  color: var(--col-text-2);
+}
+
+.profile-edit-panel__updated {
+  font-size: 0.72rem;
+  color: var(--col-ok);
+  background: rgba(34,211,160,0.08);
+  border: 1px solid rgba(34,211,160,0.2);
+  border-radius: var(--r-md);
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+
+/* Profile Edit Form */
+.profile-edit-form__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.profile-edit-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-edit-form__group--full {
+  grid-column: 1 / -1;
+}
+
+.profile-edit-form__group--error .profile-edit-form__input,
+.profile-edit-form__group--error .profile-edit-form__select,
+.profile-edit-form__group--error .profile-edit-form__textarea {
+  border-color: var(--col-err);
+  background: rgba(244,63,94,0.05);
+  animation: formShake 0.35s ease;
+}
+
+.profile-edit-form__label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--col-text-2);
+  letter-spacing: 0.02em;
+}
+
+.profile-edit-form__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.profile-edit-form__required {
+  color: var(--col-err);
+  margin-left: 2px;
+}
+
+.profile-edit-form__input,
+.profile-edit-form__select {
+  width: 100%;
+  background: var(--col-surface-hi);
+  border: 1px solid var(--col-border-md);
+  border-radius: var(--r-md);
+  color: var(--col-text);
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.profile-edit-form__input:focus,
+.profile-edit-form__select:focus {
+  border-color: var(--col-primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.profile-edit-form__textarea {
+  width: 100%;
+  background: var(--col-surface-hi);
+  border: 1px solid var(--col-border-md);
+  border-radius: var(--r-md);
+  color: var(--col-text);
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  font-family: var(--font-sans);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+
+.profile-edit-form__textarea:focus {
+  border-color: var(--col-primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.profile-edit-form__error {
+  font-size: 0.75rem;
+  color: var(--col-err);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.profile-edit-form__error::before {
+  content: '⚠';
+  font-size: 0.7rem;
+}
+
+.profile-edit-form__counter {
+  font-size: 0.72rem;
+  color: var(--col-text-3);
+  font-family: var(--font-mono);
+}
+
+.profile-edit-form__counter--warn {
+  color: var(--col-warn);
+}
+
+.profile-edit-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+.profile-edit-form__dirty-badge {
+  font-size: 0.73rem;
+  color: var(--col-warn);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Enhanced Task Create Form ──────────────────────────────────────────── */
+
+.task-create-card--enhanced {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-md);
+  border-radius: var(--r-xl);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+}
+
+.task-create-card__header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.task-create-card__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--col-text);
+  margin-top: 4px;
+}
+
+.task-create-form--enhanced {
+  display: block;
+}
+
+.task-create-form__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.task-create-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.task-create-form__group--full {
+  grid-column: 1 / -1;
+}
+
+.task-create-form__group--submit {
+  display: flex;
+  align-items: flex-end;
+}
+
+.task-create-form__group--error .task-create-form__input,
+.task-create-form__group--error .task-create-form__select,
+.task-create-form__group--error .task-create-form__textarea {
+  border-color: var(--col-err);
+  background: rgba(244,63,94,0.05);
+  animation: formShake 0.35s ease;
+}
+
+.task-create-form__label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--col-text-2);
+}
+
+.task-create-form__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.task-create-form__input,
+.task-create-form__select {
+  width: 100%;
+  background: var(--col-surface-hi);
+  border: 1px solid var(--col-border-md);
+  border-radius: var(--r-md);
+  color: var(--col-text);
+  padding: 9px 12px;
+  font-size: 0.86rem;
+  outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.task-create-form__input:focus,
+.task-create-form__select:focus {
+  border-color: var(--col-primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.task-create-form__textarea {
+  width: 100%;
+  background: var(--col-surface-hi);
+  border: 1px solid var(--col-border-md);
+  border-radius: var(--r-md);
+  color: var(--col-text);
+  padding: 9px 12px;
+  font-size: 0.86rem;
+  font-family: var(--font-sans);
+  outline: none;
+  resize: vertical;
+  min-height: 70px;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+
+.task-create-form__textarea:focus {
+  border-color: var(--col-primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.task-create-form__error {
+  font-size: 0.73rem;
+  color: var(--col-err);
+}
+
+.task-create-form__error::before { content: '⚠ '; }
+
+.task-create-form__feedback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.task-create-form__char-count {
+  font-size: 0.7rem;
+  color: var(--col-text-3);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.task-create-form__btn-submit {
+  width: 100%;
+}
+
+/* Task item description expand */
+.task-item__due {
+  font-size: 0.72rem;
+  color: var(--col-info);
+  font-family: var(--font-mono);
+}
+
+.task-item__desc-toggle {
+  margin-top: 4px;
+}
+
+.task-item__expand-btn {
+  background: none;
+  border: none;
+  font-size: 0.7rem;
+  color: var(--col-text-3);
+  cursor: pointer;
+  padding: 2px 0;
+  transition: color var(--t-fast);
+}
+
+.task-item__expand-btn:hover { color: var(--col-primary); }
+
+.task-item__desc {
+  font-size: 0.78rem;
+  color: var(--col-text-2);
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border-left: 2px solid var(--col-border-acc);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  line-height: 1.5;
+}
+
+/* ── Feedback / Support Form ────────────────────────────────────────────── */
+
+.feedback-panel {
+  background: var(--col-surface);
+  border: 1px solid var(--col-border-md);
+  border-radius: var(--r-xl);
+  padding: 28px 32px;
+  margin-top: 28px;
+}
+
+.feedback-panel__header {
+  margin-bottom: 24px;
+}
+
+.feedback-panel__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--col-text);
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.feedback-panel__sub {
+  font-size: 0.8rem;
+  color: var(--col-text-2);
+}
+
+.feedback-form__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.feedback-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.feedback-form__group--full {
+  grid-column: 1 / -1;
+}
+
+.feedback-form__group--error .feedback-form__input,
+.feedback-form__group--error .feedback-form__select,
+.feedback-form__group--error .feedback-form__textarea {
+  border-color: var(--col-err);
+  background: rgba(244,63,94,0.05);
+  animation: formShake 0.35s ease;
+}
+
+.feedback-form__label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--col-text-2);
+}
+
+.feedback-form__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feedback-form__input,
+.feedback-form__select {
+  width: 100%;
+  background: var(--col-surface-hi);
+  border: 1px solid var(--col-border-md);
+  border-radius: var(--r-md);
+  color: var(--col-text);
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.feedback-form__input:focus,
+.feedback-form__select:focus {
+  border-color: var(--col-primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.feedback-form__textarea {
+  width: 100%;
+  background: var(--col-surface-hi);
+  border: 1px solid var(--col-border-md);
+  border-radius: var(--r-xl);
+  color: var(--col-text);
+  padding: 12px 16px;
+  font-size: 0.88rem;
+  font-family: var(--font-sans);
+  outline: none;
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.6;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+
+.feedback-form__textarea:focus {
+  border-color: var(--col-primary);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+.feedback-form__error {
+  font-size: 0.75rem;
+  color: var(--col-err);
+}
+
+.feedback-form__error::before { content: '⚠ '; }
+
+.feedback-form__counter {
+  font-size: 0.72rem;
+  color: var(--col-text-3);
+  font-family: var(--font-mono);
+}
+
+.feedback-form__counter--warn {
+  color: var(--col-warn);
+  font-weight: 600;
+}
+
+.feedback-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+.feedback-form__note {
+  font-size: 0.73rem;
+  color: var(--col-text-3);
+  font-style: italic;
+}
+
+/* Responsive adjustments for Checkpoint 4 forms */
+@media (max-width: 768px) {
+  .profile-edit-form__grid { grid-template-columns: 1fr; }
+  .task-create-form__grid { grid-template-columns: 1fr 1fr; }
+  .feedback-form__grid { grid-template-columns: 1fr; }
+  .profile-edit-panel { padding: 20px 16px; }
+  .feedback-panel { padding: 20px 16px; }
+  .task-create-card--enhanced { padding: 20px 16px; }
+}
+
+@media (max-width: 480px) {
+  .task-create-form__grid { grid-template-columns: 1fr; }
+}

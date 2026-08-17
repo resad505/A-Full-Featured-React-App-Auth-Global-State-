@@ -7,6 +7,7 @@ const defaultTasks = [
   { 
     id: 1, 
     title: 'Vue Router 4 Navigation Guards quraşdırılması', 
+    description: 'beforeEach guard ilə protected route yönləndirilməsi.', 
     done: true, 
     priority: 'High', 
     category: 'Architecture', 
@@ -15,6 +16,7 @@ const defaultTasks = [
   { 
     id: 2, 
     title: 'Protected routes /login?redirect yönləndirməsi', 
+    description: 'Unauthenticated istifadəçini login-ə yönləndir, redirect query parametri ilə.', 
     done: true, 
     priority: 'High', 
     category: 'Security', 
@@ -23,6 +25,7 @@ const defaultTasks = [
   { 
     id: 3, 
     title: 'BEM metodologiyası ilə CSS siniflərinin təşkili', 
+    description: '', 
     done: true, 
     priority: 'Medium', 
     category: 'Styling', 
@@ -31,6 +34,7 @@ const defaultTasks = [
   { 
     id: 4, 
     title: 'Global state management (Context / Redux Pattern)', 
+    description: 'Centralized store, dispatcher, action history logger tamamla.', 
     done: false, 
     priority: 'High', 
     category: 'State', 
@@ -39,6 +43,7 @@ const defaultTasks = [
   { 
     id: 5, 
     title: 'Form Validation və error boundary ssenariləri', 
+    description: 'useForm composable, validators.js, 3 ayrı validasiyalı form.', 
     done: false, 
     priority: 'Medium', 
     category: 'Forms', 
@@ -47,6 +52,7 @@ const defaultTasks = [
   { 
     id: 6, 
     title: 'Mock API ilə optimistik CRUD əməliyyatları', 
+    description: '', 
     done: false, 
     priority: 'Low', 
     category: 'API', 
@@ -143,9 +149,11 @@ export const taskSlice = {
     const newTask = {
       id: Date.now(),
       title,
+      description: (typeof taskData === 'object' ? taskData.description : '') || '',
       done: false,
       priority: taskData.priority || 'Medium',
       category: taskData.category || 'General',
+      dueDate: (typeof taskData === 'object' ? taskData.dueDate : '') || '',
       createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
